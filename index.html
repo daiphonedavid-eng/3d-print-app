@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Print Expert Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            /* Базові кольори (якщо відкрито НЕ в Телеграмі) */
+            --bg-body: #f5f5f7;
+            --bg-card: #ffffff;
+            --bg-darker: #fafafa;
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
+            --primary: #0071e3;
+            --border: #d2d2d7;
+            --card-radius: 12px;
+        }
+
+        /* Інтеграція змінних Телеграму */
+        body.tg-mode {
+            --bg-body: var(--tg-theme-bg-color, #f5f5f7);
+            --bg-card: var(--tg-theme-secondary-bg-color, #ffffff);
+            --bg-darker: var(--tg-theme-header-bg-color, #fafafa);
+            --text-main: var(--tg-theme-text-color, #1d1d1f);
+            --text-muted: var(--tg-theme-hint-color, #86868b);
+            --primary: var(--tg-theme-button-color, #0071e3);
+            --border: rgba(128, 128, 128, 0.2);
+        }
+
+        /* Темна тема (фоллбек для браузера) */
+        body.dark-mode {
+            --bg-body: #000000;
+            --bg-card: #1c1c1e;
+            --bg-darker: #121212;
+            --text-main: #f5f5f7;
+            --text-muted: #86868b;
+            --border: #38383a;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-body); 
+            margin: 0; 
+            padding: 20px 16px 80px 16px; /* Додав відступ знизу для MainButton */
+            color: var(--text-main);
+            line-height: 1.4;
+            transition: background 0.3s, color 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            /* Приховаємо кнопку, якщо ми в Телеграмі (там тема авто) */
+            display: flex; 
+        }
+
+        .main-title { text-align: center; margin-bottom: 30px; font-weight: 600; letter-spacing: -0.5px; margin-top: 10px; }
+
+        .dashboard { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 16px; 
+            max-width: 600px; 
+            margin: 0 auto; 
+        }
+
+        .card { 
+            background: var(--bg-card); 
+            padding: 16px; 
+            border-radius: var(--card-radius); 
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .inputs-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .input-group { 
+            flex: 1 1 140px; 
+            margin-bottom: 4px;
+        }
+
+        .settings-card {
+            background: var(--bg-darker);
+        }
+
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 4px 0;
+        }
+
+        .settings-header h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin: 0; }
+
+        .settings-content {
+            display: none;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-top: 16px;
+            margin-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .settings-content.active { display: flex; }
+
+        h3 { margin-bottom: 12px; font-size: 1rem; font-weight: 600; }
+
+        label { display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); }
+
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            background: var(--bg-card);
+            color: var(--text-main);
+            font-size: 1rem; /* Більший шрифт для мобільних */
+            outline: none;
+            box-sizing: border-box;
+            appearance: none; /* Прибирає стандартні стилі браузера */
+        }
+
+        input:focus, select:focus { border-color: var(--primary); }
+
+        .footer-container {
+            display: grid; 
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .detail-item { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 6px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .detail-item:last-child { border-bottom: none; }
+
+        .summary-card { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 8px; 
+            background: var(--text-main); 
+            color: var(--bg-card); 
+            padding: 20px;
+            border-radius: var(--card-radius);
+            align-items: center;
+        }
+
+        .stat-box { text-align: center; }
+        .stat-box label { font-size: 0.7rem; opacity: 0.7; }
+        .stat-box .price { font-size: 1.1rem; font-weight: 700; display: block; margin-top: 4px; }
+
+        .stat-box.profit-box .price { color: #34c759; }
+        
+        /* Якщо фон темний (в темній темі), робимо зелений яскравішим */
+        body.dark-mode .stat-box.profit-box .price,
+        body.tg-mode .stat-box.profit-box .price { color: #30d158; }
+
+        .chevron::after { content: '↓'; font-size: 0.8rem; margin-left: 8px; transition: transform 0.2s; display: inline-block; }
+        .active-chevron::after { transform: rotate(180deg); }
+
+    </style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
+
+<h1 class="main-title">3D Print Studio</h1>
+
+<div class="dashboard">
+    
+    <main class="card">
+        <h3>Параметри моделі</h3>
+        <div class="inputs-row">
+            <div class="input-group">
+                <label>Матеріал</label>
+                <select id="materialType" onchange="loadMaterialPrice()">
+                    <option value="PLA">PLA</option>
+                    <option value="PETG">PETG</option>
+                    <option value="ABS">ABS / ASA</option>
+                    <option value="TPU">TPU</option>
+                    <option value="Custom">Custom</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Вага (г)</label>
+                <input type="number" inputmode="decimal" id="weight" oninput="calculate()" placeholder="0">
+            </div>
+            <div class="input-group">
+                <label>Час (год)</label>
+                <input type="number" inputmode="decimal" id="hours" oninput="calculate()" placeholder="0">
+            </div>
+        </div>
+    </main>
+
+    <section class="card settings-card">
+        <div class="settings-header" onclick="toggleSettings()">
+            <h3>Налаштування тарифів (<span id="selected-material-label">PLA</span>)</h3>
+            <span id="chevron" class="chevron"></span>
+        </div>
+        <div id="settingsContent" class="settings-content">
+            <div class="input-group">
+                <label>Ціна за кг (₴)</label>
+                <input type="number" inputmode="decimal" id="priceKg" oninput="saveManualPrice()">
+            </div>
+            <div class="input-group">
+                <label>Тариф кВт (₴)</label>
+                <input type="number" inputmode="decimal" id="priceKwt" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Потужність (Вт)</label>
+                <input type="number" inputmode="decimal" id="power" oninput="calculate()">
+            </div>
+            <div class="input-group">
+                <label>Націнка (%)</label>
+                <input type="number" inputmode="decimal" id="markup" oninput="calculate()">
+            </div>
+        </div>
+    </section>
+
+    <div class="footer-container">
+        <div class="card detail-card">
+            <h3>Деталізація</h3>
+            <div class="detail-item"><span>Пластик</span><span id="res-material" style="font-weight: 500;">0 ₴</span></div>
+            <div class="detail-item"><span>Енергія</span><span id="res-energy" style="font-weight: 500;">0 ₴</span></div>
+            <div class="detail-item"><span>Амортизація</span><span id="res-amortization" style="font-weight: 500;">0 ₴</span></div>
+        </div>
+
+        <div class="summary-card">
+            <div class="stat-box"><label>Собівартість</label><span id="total-cost" class="price">0 ₴</span></div>
+            <div class="stat-box"><label>Ціна продажу</label><span id="sell-price" class="price">0 ₴</span></div>
+            <div class="stat-box profit-box"><label>Прибуток</label><span id="profit" class="price">0 ₴</span></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const defaultPrices = {'PLA':800, 'PETG':750, 'ABS':1200, 'TPU':2500, 'Custom':1000};
+    const fields = ['priceKwt', 'power', 'markup', 'weight', 'hours', 'materialType'];
+    
+    // Ініціалізація Telegram WebApp
+    const tg = window.Telegram.WebApp;
+
+    window.onload = () => {
+        // 1. Налаштування Telegram
+        tg.ready(); // Повідомляємо, що додаток завантажився
+        tg.expand(); // Розгортаємо на весь екран
+
+        // Перевіряємо, чи ми в Телеграмі
+        if (tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0 || tg.colorScheme) {
+            document.body.classList.add('tg-mode');
+            document.getElementById('themeBtn').style.display = 'none'; // Ховаємо кнопку в ТГ
+            
+            // Налаштування кольору хедера (шторки)
+            tg.setHeaderColor('secondary_bg_color'); 
+        } else {
+            // Звичайна логіка для браузера
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('themeBtn').innerText = '☀️';
+            }
+        }
+
+        // 2. Відновлення даних
+        fields.forEach(id => {
+            const saved = localStorage.getItem(id);
+            if (saved) document.getElementById(id).value = saved;
+        });
+        loadMaterialPrice();
+
+        // 3. Налаштування MainButton (Велика кнопка внизу)
+        tg.MainButton.setText("РОЗРАХУВАТИ");
+        tg.MainButton.hide(); // Покажемо, коли буде результат
+        
+        // Додамо подію на кнопку (просто для прикладу закриття або відправки)
+        tg.MainButton.onClick(() => {
+            // Тут можна відправити дані боту: tg.sendData(JSON.stringify({price: ...}));
+            tg.close();
+        });
+    };
+
+    function toggleTheme() {
+        const isDark = document.body.classList.toggle('dark-mode');
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        document.getElementById('themeBtn').innerText = isDark ? '☀️' : '🌙';
+    }
+
+    function toggleSettings() {
+        document.getElementById('settingsContent').classList.toggle('active');
+        document.getElementById('chevron').classList.toggle('active-chevron');
+    }
+
+    function loadMaterialPrice() {
+        const select = document.getElementById('materialType');
+        const type = select.value;
+        const savedPrice = localStorage.getItem('price_' + type);
+        document.getElementById('selected-material-label').innerText = type;
+        document.getElementById('priceKg').value = savedPrice ? savedPrice : defaultPrices[type];
+        localStorage.setItem('materialType', type);
+        calculate();
+    }
+
+    function saveManualPrice() {
+        const type = document.getElementById('materialType').value;
+        localStorage.setItem('price_' + type, document.getElementById('priceKg').value);
+        calculate();
+    }
+
+    function calculate() {
+        const d = (id) => parseFloat(document.getElementById(id).value) || 0;
+        fields.forEach(id => localStorage.setItem(id, document.getElementById(id).value));
+
+        const cMat = (d('weight') / 1000) * d('priceKg');
+        const cEn = (d('power') * d('hours') / 1000) * d('priceKwt');
+        const cAmort = (cMat + cEn) * 0.03;
+        const total = cMat + cEn + cAmort;
+        const sell = total * (1 + d('markup') / 100);
+
+        const fmt = (v) => v.toFixed(0) + ' ₴'; // Прибрав копійки для чистоти UI
+        const fmtFull = (v) => v.toFixed(2) + ' ₴';
+
+        document.getElementById('res-material').innerText = fmtFull(cMat);
+        document.getElementById('res-energy').innerText = fmtFull(cEn);
+        document.getElementById('res-amortization').innerText = fmtFull(cAmort);
+        document.getElementById('total-cost').innerText = fmtFull(total);
+        document.getElementById('sell-price').innerText = fmtFull(sell);
+        document.getElementById('profit').innerText = fmtFull(sell - total);
+
+        // Оновлення нативної кнопки Telegram
+        if (sell > 0) {
+            tg.MainButton.setText(`ПРОДАЖ: ${fmt(sell)}`);
+            tg.MainButton.show();
+            tg.MainButton.enable();
+        } else {
+            tg.MainButton.hide();
+        }
+    }
+</script>
+</body>
+</html>
