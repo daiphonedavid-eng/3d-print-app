@@ -43,7 +43,8 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg-body); 
             margin: 0; 
-            padding: 20px 16px 80px 16px; /* Додав відступ знизу для MainButton */
+            /* Зменшив відступ знизу, бо кнопки більше немає */
+            padding: 20px 16px 40px 16px; 
             color: var(--text-main);
             line-height: 1.4;
             transition: background 0.3s, color 0.3s;
@@ -123,6 +124,25 @@
         .settings-content.active { display: flex; }
 
         h3 { margin-bottom: 12px; font-size: 1rem; font-weight: 600; }
+
+        /* Стилі для нового інфо-блоку */
+        .info-card {
+            background: var(--bg-darker); /* Трохи темніший фон, як у налаштувань */
+            font-size: 0.9rem;
+        }
+        .info-card h3 {
+             margin-bottom: 8px;
+             font-size: 0.95rem;
+             display: flex; align-items: center; gap: 8px;
+        }
+        .info-card p {
+            margin: 0 0 10px 0;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        .info-card p:last-child { margin-bottom: 0; }
+        .info-card strong { color: var(--text-main); font-weight: 600; }
+
 
         label { display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); }
 
@@ -239,12 +259,22 @@
         </div>
     </section>
 
+    <section class="card info-card">
+        <h3>ℹ️ Інформація про сервіс</h3>
+        <p>
+            Система автоматично додає <strong>3% амортизації</strong> обладнання до вартості матеріалів та енергії.
+        </p>
+        <p>
+            Всі показники: ціну на пластик, тариф на світло, потужність принтера та бажану націнку — ви можете вписати вручну в блоці "Налаштування тарифів" індивідуально.
+        </p>
+    </section>
+
     <div class="footer-container">
         <div class="card detail-card">
-            <h3>Деталізація</h3>
+            <h3>Витрати</h3>
             <div class="detail-item"><span>Пластик</span><span id="res-material" style="font-weight: 500;">0 ₴</span></div>
             <div class="detail-item"><span>Енергія</span><span id="res-energy" style="font-weight: 500;">0 ₴</span></div>
-            <div class="detail-item"><span>Амортизація</span><span id="res-amortization" style="font-weight: 500;">0 ₴</span></div>
+            <div class="detail-item"><span>Амортизація (3%)</span><span id="res-amortization" style="font-weight: 500;">0 ₴</span></div>
         </div>
 
         <div class="summary-card">
@@ -289,15 +319,7 @@
         });
         loadMaterialPrice();
 
-        // 3. Налаштування MainButton (Велика кнопка внизу)
-        tg.MainButton.setText("РОЗРАХУВАТИ");
-        tg.MainButton.hide(); // Покажемо, коли буде результат
-        
-        // Додамо подію на кнопку (просто для прикладу закриття або відправки)
-        tg.MainButton.onClick(() => {
-            // Тут можна відправити дані боту: tg.sendData(JSON.stringify({price: ...}));
-            tg.close();
-        });
+        // ВИДАЛЕНО: Блок налаштування MainButton
     };
 
     function toggleTheme() {
@@ -347,14 +369,7 @@
         document.getElementById('sell-price').innerText = fmtFull(sell);
         document.getElementById('profit').innerText = fmtFull(sell - total);
 
-        // Оновлення нативної кнопки Telegram
-        if (sell > 0) {
-            tg.MainButton.setText(`ПРОДАЖ: ${fmt(sell)}`);
-            tg.MainButton.show();
-            tg.MainButton.enable();
-        } else {
-            tg.MainButton.hide();
-        }
+        // ВИДАЛЕНО: Логіка оновлення MainButton
     }
 </script>
 </body>
