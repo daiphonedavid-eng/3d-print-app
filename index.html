@@ -18,8 +18,8 @@
             --bg-body: #f5f5f7;
             --bg-card: #ffffff;
             --bg-darker: #fafafa;
-            --text-main: #1d1d1f;
-            --text-muted: #86868b;
+            --text-main: #000000; /* Зробив максимально чорним */
+            --text-muted: #48484a; /* Зробив значно темнішим сірий */
             --primary: #0071e3;
             --border: #d2d2d7;
             --card-radius: 12px;
@@ -29,18 +29,18 @@
             --bg-body: var(--tg-theme-bg-color, #f5f5f7);
             --bg-card: var(--tg-theme-secondary-bg-color, #ffffff);
             --bg-darker: var(--tg-theme-header-bg-color, #fafafa);
-            --text-main: var(--tg-theme-text-color, #1d1d1f);
-            --text-muted: var(--tg-theme-hint-color, #86868b);
+            --text-main: var(--tg-theme-text-color, #000000);
+            --text-muted: var(--tg-theme-hint-color, #555555); /* Темніший фоллбек */
             --primary: var(--tg-theme-button-color, #0071e3);
-            --border: rgba(128, 128, 128, 0.2);
+            --border: rgba(128, 128, 128, 0.3);
         }
 
         body.dark-mode {
             --bg-body: #000000;
             --bg-card: #1c1c1e;
             --bg-darker: #121212;
-            --text-main: #f5f5f7;
-            --text-muted: #86868b;
+            --text-main: #ffffff;
+            --text-muted: #98989d; /* Світліший сірий для темної теми */
             --border: #38383a;
         }
 
@@ -71,7 +71,7 @@
             z-index: 1000;
         }
 
-        .main-title { text-align: center; margin-bottom: 20px; font-weight: 600; letter-spacing: -0.5px; margin-top: 10px; }
+        .main-title { text-align: center; margin-bottom: 20px; font-weight: 700; letter-spacing: -0.5px; margin-top: 10px; color: var(--text-main); }
 
         .dashboard { 
             display: grid; 
@@ -86,7 +86,7 @@
             padding: 16px; 
             border-radius: var(--card-radius); 
             border: 1px solid var(--border);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
 
         .inputs-row { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -94,37 +94,46 @@
 
         .settings-card { background: var(--bg-darker); }
         .settings-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 4px 0; }
-        .settings-header h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin: 0; }
+        
+        /* Заголовки налаштувань зробив чіткішими */
+        .settings-header h3 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main); opacity: 0.8; margin: 0; }
+        
         .settings-content { display: none; flex-wrap: wrap; gap: 12px; padding-top: 16px; margin-top: 12px; border-top: 1px solid var(--border); }
         .settings-content.active { display: flex; }
 
-        h3 { margin-bottom: 12px; font-size: 1rem; font-weight: 600; }
+        h3 { margin-bottom: 12px; font-size: 1rem; font-weight: 600; color: var(--text-main); }
 
-        .info-card { background: var(--bg-darker); font-size: 0.85rem; margin-top: 10px;}
-        .info-card p { margin: 0 0 10px 0; color: var(--text-muted); line-height: 1.5; }
-        .info-card strong { color: var(--text-main); font-weight: 600; }
+        .info-card { background: var(--bg-darker); font-size: 0.9rem; margin-top: 10px;}
+        /* Текст в інфо-картці тепер бере колір основного тексту, а не світлого */
+        .info-card p { margin: 0 0 10px 0; color: var(--text-main); opacity: 0.85; line-height: 1.5; }
+        .info-card strong { color: var(--text-main); font-weight: 700; opacity: 1; }
 
-        label { display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text-main); font-size: 1rem; outline: none; box-sizing: border-box; appearance: none; }
+        /* Лейбли (назви полів) тепер темні і чіткі */
+        label { display: block; margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--text-main); opacity: 0.8; }
+        
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text-main); font-size: 1rem; outline: none; box-sizing: border-box; appearance: none; font-weight: 500; }
         input:focus, select:focus { border-color: var(--primary); }
 
         .footer-container { display: grid; grid-template-columns: 1fr; gap: 16px; }
-        .detail-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+        .detail-item { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.95rem; border-bottom: 1px solid var(--border); color: var(--text-main); }
         .detail-item:last-child { border-bottom: none; }
+        
+        /* Зробив значення в деталізації жирнішими */
+        .detail-item span:last-child { font-weight: 600; }
 
         .summary-card { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--text-main); color: var(--bg-card); padding: 20px; border-radius: var(--card-radius); align-items: center; }
         .stat-box { text-align: center; }
-        .stat-box label { font-size: 0.7rem; opacity: 0.7; }
-        .stat-box .price { font-size: 1.1rem; font-weight: 700; display: block; margin-top: 4px; }
+        .stat-box label { font-size: 0.75rem; opacity: 0.8; color: var(--bg-card); font-weight: 500;} 
+        .stat-box .price { font-size: 1.15rem; font-weight: 700; display: block; margin-top: 4px; }
         .stat-box.profit-box .price { color: #34c759; }
         body.dark-mode .stat-box.profit-box .price, body.tg-mode .stat-box.profit-box .price { color: #30d158; }
 
         .chevron::after { content: '↓'; font-size: 0.8rem; margin-left: 8px; transition: transform 0.2s; display: inline-block; }
         .active-chevron::after { transform: rotate(180deg); }
 
-        /* Стилі для вкладок */
-        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .tab-btn.active { background: var(--primary); color: #fff; }
+        /* Стилі для вкладок - зробив неактивну кнопку темнішою */
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-main); opacity: 0.6; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: var(--primary); color: #fff; opacity: 1; }
     </style>
 </head>
 <body>
@@ -191,9 +200,9 @@
         <div class="footer-container">
             <div class="card detail-card">
                 <h3>Деталізація</h3>
-                <div class="detail-item"><span>Пластик</span><span id="res-material" style="font-weight: 500;">0 ₴</span></div>
-                <div class="detail-item"><span>Енергія</span><span id="res-energy" style="font-weight: 500;">0 ₴</span></div>
-                <div class="detail-item"><span>Амортизація</span><span id="res-amortization" style="font-weight: 500;">0 ₴</span></div>
+                <div class="detail-item"><span>Пластик</span><span id="res-material">0 ₴</span></div>
+                <div class="detail-item"><span>Енергія</span><span id="res-energy">0 ₴</span></div>
+                <div class="detail-item"><span>Амортизація</span><span id="res-amortization">0 ₴</span></div>
             </div>
 
             <div class="summary-card">
@@ -213,14 +222,14 @@
 </div>
 
 <div id="tab-lib" style="display: none;">
-    <h2 style="text-align:center; margin-bottom: 20px;">Довідник Температур</h2>
+    <h2 style="text-align:center; margin-bottom: 20px; font-weight: 700;">Довідник Температур</h2>
     
     <div class="card" style="margin-bottom: 16px; border-left: 5px solid #34c759;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
             <h3 style="margin:0;">PLA</h3>
             <span style="background:#e8f8ed; color:#34c759; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Легкий</span>
         </div>
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Найпопулярніший. Не потребує термокамери.</p>
+        <p style="font-size:0.95rem; color:var(--text-main); opacity: 0.8; margin-bottom:15px;">Найпопулярніший. Не потребує термокамери.</p>
         <div class="detail-item"><span>🌡 Сопло:</span><strong>190 - 220 °C</strong></div>
         <div class="detail-item"><span>🛏 Стіл:</span><strong>50 - 60 °C</strong></div>
         <div class="detail-item"><span>💨 Обдув:</span><strong>100%</strong></div>
@@ -231,7 +240,7 @@
             <h3 style="margin:0;">PETG</h3>
             <span style="background:#e0f0ff; color:#0071e3; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Середній</span>
         </div>
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Золота середина. Міцний, але "сопливить".</p>
+        <p style="font-size:0.95rem; color:var(--text-main); opacity: 0.8; margin-bottom:15px;">Золота середина. Міцний, але "сопливить".</p>
         <div class="detail-item"><span>🌡 Сопло:</span><strong>230 - 250 °C</strong></div>
         <div class="detail-item"><span>🛏 Стіл:</span><strong>70 - 80 °C</strong></div>
         <div class="detail-item"><span>💨 Обдув:</span><strong>30 - 50%</strong></div>
@@ -242,7 +251,7 @@
             <h3 style="margin:0;">ABS / ASA</h3>
             <span style="background:#ffe5e3; color:#ff3b30; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Складний</span>
         </div>
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Термостійкий. Потрібна закрита камера (усадка).</p>
+        <p style="font-size:0.95rem; color:var(--text-main); opacity: 0.8; margin-bottom:15px;">Термостійкий. Потрібна закрита камера (усадка).</p>
         <div class="detail-item"><span>🌡 Сопло:</span><strong>240 - 260 °C</strong></div>
         <div class="detail-item"><span>🛏 Стіл:</span><strong>100 - 110 °C</strong></div>
         <div class="detail-item"><span>💨 Обдув:</span><strong>Вимкнено</strong></div>
@@ -253,7 +262,7 @@
             <h3 style="margin:0;">TPU</h3>
             <span style="background:#fff5e0; color:#ff9500; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Гнучкий</span>
         </div>
-        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Гумоподібний. Друкувати дуже повільно.</p>
+        <p style="font-size:0.95rem; color:var(--text-main); opacity: 0.8; margin-bottom:15px;">Гумоподібний. Друкувати дуже повільно.</p>
         <div class="detail-item"><span>🌡 Сопло:</span><strong>200 - 220 °C</strong></div>
         <div class="detail-item"><span>🛏 Стіл:</span><strong>40 - 60 °C</strong></div>
     </div>
