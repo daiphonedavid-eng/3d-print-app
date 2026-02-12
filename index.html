@@ -18,8 +18,8 @@
             --bg-body: #f5f5f7;
             --bg-card: #ffffff;
             --bg-darker: #fafafa;
-            --text-main: #000000; /* Зробив максимально чорним */
-            --text-muted: #48484a; /* Зробив значно темнішим сірий */
+            --text-main: #000000;
+            --text-muted: #48484a;
             --primary: #0071e3;
             --border: #d2d2d7;
             --card-radius: 12px;
@@ -30,7 +30,7 @@
             --bg-card: var(--tg-theme-secondary-bg-color, #ffffff);
             --bg-darker: var(--tg-theme-header-bg-color, #fafafa);
             --text-main: var(--tg-theme-text-color, #000000);
-            --text-muted: var(--tg-theme-hint-color, #555555); /* Темніший фоллбек */
+            --text-muted: var(--tg-theme-hint-color, #555555);
             --primary: var(--tg-theme-button-color, #0071e3);
             --border: rgba(128, 128, 128, 0.3);
         }
@@ -40,7 +40,7 @@
             --bg-card: #1c1c1e;
             --bg-darker: #121212;
             --text-main: #ffffff;
-            --text-muted: #98989d; /* Світліший сірий для темної теми */
+            --text-muted: #98989d;
             --border: #38383a;
         }
 
@@ -94,31 +94,23 @@
 
         .settings-card { background: var(--bg-darker); }
         .settings-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 4px 0; }
-        
-        /* Заголовки налаштувань зробив чіткішими */
         .settings-header h3 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-main); opacity: 0.8; margin: 0; }
-        
         .settings-content { display: none; flex-wrap: wrap; gap: 12px; padding-top: 16px; margin-top: 12px; border-top: 1px solid var(--border); }
         .settings-content.active { display: flex; }
 
         h3 { margin-bottom: 12px; font-size: 1rem; font-weight: 600; color: var(--text-main); }
 
         .info-card { background: var(--bg-darker); font-size: 0.9rem; margin-top: 10px;}
-        /* Текст в інфо-картці тепер бере колір основного тексту, а не світлого */
         .info-card p { margin: 0 0 10px 0; color: var(--text-main); opacity: 0.85; line-height: 1.5; }
         .info-card strong { color: var(--text-main); font-weight: 700; opacity: 1; }
 
-        /* Лейбли (назви полів) тепер темні і чіткі */
         label { display: block; margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--text-main); opacity: 0.8; }
-        
         input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text-main); font-size: 1rem; outline: none; box-sizing: border-box; appearance: none; font-weight: 500; }
         input:focus, select:focus { border-color: var(--primary); }
 
         .footer-container { display: grid; grid-template-columns: 1fr; gap: 16px; }
         .detail-item { display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.95rem; border-bottom: 1px solid var(--border); color: var(--text-main); }
         .detail-item:last-child { border-bottom: none; }
-        
-        /* Зробив значення в деталізації жирнішими */
         .detail-item span:last-child { font-weight: 600; }
 
         .summary-card { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--text-main); color: var(--bg-card); padding: 20px; border-radius: var(--card-radius); align-items: center; }
@@ -131,7 +123,6 @@
         .chevron::after { content: '↓'; font-size: 0.8rem; margin-left: 8px; transition: transform 0.2s; display: inline-block; }
         .active-chevron::after { transform: rotate(180deg); }
 
-        /* Стилі для вкладок - зробив неактивну кнопку темнішою */
         .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-main); opacity: 0.6; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--primary); color: #fff; opacity: 1; }
     </style>
@@ -202,7 +193,7 @@
                 <h3>Деталізація</h3>
                 <div class="detail-item"><span>Пластик</span><span id="res-material">0 ₴</span></div>
                 <div class="detail-item"><span>Енергія</span><span id="res-energy">0 ₴</span></div>
-                <div class="detail-item"><span>Амортизація</span><span id="res-amortization">0 ₴</span></div>
+                <div class="detail-item"><span>Амортизація (10%)</span><span id="res-amortization">0 ₴</span></div>
             </div>
 
             <div class="summary-card">
@@ -214,7 +205,7 @@
 
         <section class="card info-card">
             <h3>ℹ️ Інформація про сервіс</h3>
-            <p>Система автоматично додає <strong>3% амортизації</strong> обладнання до вартості матеріалів та енергії.</p>
+            <p>Система автоматично додає <strong>10% амортизації</strong> обладнання до вартості матеріалів та енергії.</p>
             <p>Всі показники можна змінити вручну в блоці "Налаштування тарифів".</p>
         </section>
 
@@ -344,7 +335,7 @@
 
         const cMat = (d('weight') / 1000) * d('priceKg');
         const cEn = (d('power') * d('hours') / 1000) * d('priceKwt');
-        const cAmort = (cMat + cEn) * 0.03;
+        const cAmort = (cMat + cEn) * 0.10; // ЗМІНЕНО НА 10%
         const total = cMat + cEn + cAmort;
         const sell = total * (1 + d('markup') / 100);
 
