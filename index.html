@@ -1,22 +1,20 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-20YWHMERD9"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-20YWHMERD9"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-20YWHMERD9');
+    </script>
 
-  gtag('config', 'G-20YWHMERD9');
-</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Print Expert Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            /* Базові кольори (якщо відкрито НЕ в Телеграмі) */
             --bg-body: #f5f5f7;
             --bg-card: #ffffff;
             --bg-darker: #fafafa;
@@ -27,7 +25,6 @@
             --card-radius: 12px;
         }
 
-        /* Інтеграція змінних Телеграму */
         body.tg-mode {
             --bg-body: var(--tg-theme-bg-color, #f5f5f7);
             --bg-card: var(--tg-theme-secondary-bg-color, #ffffff);
@@ -38,7 +35,6 @@
             --border: rgba(128, 128, 128, 0.2);
         }
 
-        /* Темна тема (фоллбек для браузера) */
         body.dark-mode {
             --bg-body: #000000;
             --bg-card: #1c1c1e;
@@ -52,8 +48,7 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background: var(--bg-body); 
             margin: 0; 
-            /* Зменшив відступ знизу, бо кнопки більше немає */
-            padding: 20px 16px 40px 16px; 
+            padding: 16px 16px 40px 16px; 
             color: var(--text-main);
             line-height: 1.4;
             transition: background 0.3s, color 0.3s;
@@ -74,11 +69,9 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            /* Приховаємо кнопку, якщо ми в Телеграмі (там тема авто) */
-            display: flex; 
         }
 
-        .main-title { text-align: center; margin-bottom: 30px; font-weight: 600; letter-spacing: -0.5px; margin-top: 10px; }
+        .main-title { text-align: center; margin-bottom: 20px; font-weight: 600; letter-spacing: -0.5px; margin-top: 10px; }
 
         .dashboard { 
             display: grid; 
@@ -96,240 +89,218 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         }
 
-        .inputs-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
+        .inputs-row { display: flex; flex-wrap: wrap; gap: 12px; }
+        .input-group { flex: 1 1 140px; margin-bottom: 4px; }
 
-        .input-group { 
-            flex: 1 1 140px; 
-            margin-bottom: 4px;
-        }
-
-        .settings-card {
-            background: var(--bg-darker);
-        }
-
-        .settings-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            padding: 4px 0;
-        }
-
+        .settings-card { background: var(--bg-darker); }
+        .settings-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 4px 0; }
         .settings-header h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin: 0; }
-
-        .settings-content {
-            display: none;
-            flex-wrap: wrap;
-            gap: 12px;
-            padding-top: 16px;
-            margin-top: 12px;
-            border-top: 1px solid var(--border);
-        }
-
+        .settings-content { display: none; flex-wrap: wrap; gap: 12px; padding-top: 16px; margin-top: 12px; border-top: 1px solid var(--border); }
         .settings-content.active { display: flex; }
 
         h3 { margin-bottom: 12px; font-size: 1rem; font-weight: 600; }
 
-        /* Стилі для нового інфо-блоку */
-        .info-card {
-            background: var(--bg-darker); /* Трохи темніший фон, як у налаштувань */
-            font-size: 0.9rem;
-        }
-        .info-card h3 {
-             margin-bottom: 8px;
-             font-size: 0.95rem;
-             display: flex; align-items: center; gap: 8px;
-        }
-        .info-card p {
-            margin: 0 0 10px 0;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-        .info-card p:last-child { margin-bottom: 0; }
+        .info-card { background: var(--bg-darker); font-size: 0.85rem; margin-top: 10px;}
+        .info-card p { margin: 0 0 10px 0; color: var(--text-muted); line-height: 1.5; }
         .info-card strong { color: var(--text-main); font-weight: 600; }
 
-
         label { display: block; margin-bottom: 6px; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); }
-
-        input, select { 
-            width: 100%; 
-            padding: 12px; 
-            border: 1px solid var(--border); 
-            border-radius: 10px; 
-            background: var(--bg-card);
-            color: var(--text-main);
-            font-size: 1rem; /* Більший шрифт для мобільних */
-            outline: none;
-            box-sizing: border-box;
-            appearance: none; /* Прибирає стандартні стилі браузера */
-        }
-
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text-main); font-size: 1rem; outline: none; box-sizing: border-box; appearance: none; }
         input:focus, select:focus { border-color: var(--primary); }
 
-        .footer-container {
-            display: grid; 
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-
-        .detail-item { 
-            display: flex; 
-            justify-content: space-between; 
-            padding: 6px 0;
-            font-size: 0.9rem;
-            border-bottom: 1px solid var(--border);
-        }
+        .footer-container { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        .detail-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
         .detail-item:last-child { border-bottom: none; }
 
-        .summary-card { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 8px; 
-            background: var(--text-main); 
-            color: var(--bg-card); 
-            padding: 20px;
-            border-radius: var(--card-radius);
-            align-items: center;
-        }
-
+        .summary-card { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--text-main); color: var(--bg-card); padding: 20px; border-radius: var(--card-radius); align-items: center; }
         .stat-box { text-align: center; }
         .stat-box label { font-size: 0.7rem; opacity: 0.7; }
         .stat-box .price { font-size: 1.1rem; font-weight: 700; display: block; margin-top: 4px; }
-
         .stat-box.profit-box .price { color: #34c759; }
-        
-        /* Якщо фон темний (в темній темі), робимо зелений яскравішим */
-        body.dark-mode .stat-box.profit-box .price,
-        body.tg-mode .stat-box.profit-box .price { color: #30d158; }
+        body.dark-mode .stat-box.profit-box .price, body.tg-mode .stat-box.profit-box .price { color: #30d158; }
 
         .chevron::after { content: '↓'; font-size: 0.8rem; margin-left: 8px; transition: transform 0.2s; display: inline-block; }
         .active-chevron::after { transform: rotate(180deg); }
 
+        /* Стилі для вкладок */
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: var(--primary); color: #fff; }
     </style>
 </head>
 <body>
 
+<div style="display: flex; gap: 10px; margin-bottom: 20px; background: var(--bg-card); padding: 5px; border-radius: 12px; border: 1px solid var(--border);">
+    <button onclick="switchTab('calc')" id="btn-calc" class="tab-btn active">🧮 Калькулятор</button>
+    <button onclick="switchTab('lib')" id="btn-lib" class="tab-btn">📚 Пластики</button>
+</div>
+
 <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">🌙</button>
 
-<h1 class="main-title">3D Print Studio</h1>
+<div id="tab-calc">
+    <h1 class="main-title">3D Print Studio</h1>
+    <div class="dashboard">
+        <main class="card">
+            <h3>Параметри моделі</h3>
+            <div class="inputs-row">
+                <div class="input-group">
+                    <label>Матеріал</label>
+                    <select id="materialType" onchange="loadMaterialPrice()">
+                        <option value="PLA">PLA</option>
+                        <option value="PETG">PETG</option>
+                        <option value="ABS">ABS / ASA</option>
+                        <option value="TPU">TPU</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Вага (г)</label>
+                    <input type="number" inputmode="decimal" id="weight" oninput="calculate()" placeholder="0">
+                </div>
+                <div class="input-group">
+                    <label>Час (год)</label>
+                    <input type="number" inputmode="decimal" id="hours" oninput="calculate()" placeholder="0">
+                </div>
+            </div>
+        </main>
 
-<div class="dashboard">
+        <section class="card settings-card">
+            <div class="settings-header" onclick="toggleSettings()">
+                <h3>Налаштування тарифів (<span id="selected-material-label">PLA</span>)</h3>
+                <span id="chevron" class="chevron"></span>
+            </div>
+            <div id="settingsContent" class="settings-content">
+                <div class="input-group">
+                    <label>Ціна за кг (₴)</label>
+                    <input type="number" inputmode="decimal" id="priceKg" oninput="saveManualPrice()">
+                </div>
+                <div class="input-group">
+                    <label>Тариф кВт (₴)</label>
+                    <input type="number" inputmode="decimal" id="priceKwt" oninput="calculate()">
+                </div>
+                <div class="input-group">
+                    <label>Потужність (Вт)</label>
+                    <input type="number" inputmode="decimal" id="power" oninput="calculate()">
+                </div>
+                <div class="input-group">
+                    <label>Націнка (%)</label>
+                    <input type="number" inputmode="decimal" id="markup" oninput="calculate()">
+                </div>
+            </div>
+        </section>
+
+        <div class="footer-container">
+            <div class="card detail-card">
+                <h3>Деталізація</h3>
+                <div class="detail-item"><span>Пластик</span><span id="res-material" style="font-weight: 500;">0 ₴</span></div>
+                <div class="detail-item"><span>Енергія</span><span id="res-energy" style="font-weight: 500;">0 ₴</span></div>
+                <div class="detail-item"><span>Амортизація</span><span id="res-amortization" style="font-weight: 500;">0 ₴</span></div>
+            </div>
+
+            <div class="summary-card">
+                <div class="stat-box"><label>Собівартість</label><span id="total-cost" class="price">0 ₴</span></div>
+                <div class="stat-box"><label>Ціна продажу</label><span id="sell-price" class="price">0 ₴</span></div>
+                <div class="stat-box profit-box"><label>Прибуток</label><span id="profit" class="price">0 ₴</span></div>
+            </div>
+        </div>
+
+        <section class="card info-card">
+            <h3>ℹ️ Інформація про сервіс</h3>
+            <p>Система автоматично додає <strong>3% амортизації</strong> обладнання до вартості матеріалів та енергії.</p>
+            <p>Всі показники можна змінити вручну в блоці "Налаштування тарифів".</p>
+        </section>
+
+    </div>
+</div>
+
+<div id="tab-lib" style="display: none;">
+    <h2 style="text-align:center; margin-bottom: 20px;">Довідник Температур</h2>
     
-    <main class="card">
-        <h3>Параметри моделі</h3>
-        <div class="inputs-row">
-            <div class="input-group">
-                <label>Матеріал</label>
-                <select id="materialType" onchange="loadMaterialPrice()">
-                    <option value="PLA">PLA</option>
-                    <option value="PETG">PETG</option>
-                    <option value="ABS">ABS / ASA</option>
-                    <option value="TPU">TPU</option>
-                    <option value="Custom">Custom</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>Вага (г)</label>
-                <input type="number" inputmode="decimal" id="weight" oninput="calculate()" placeholder="0">
-            </div>
-            <div class="input-group">
-                <label>Час (год)</label>
-                <input type="number" inputmode="decimal" id="hours" oninput="calculate()" placeholder="0">
-            </div>
+    <div class="card" style="margin-bottom: 16px; border-left: 5px solid #34c759;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;">PLA</h3>
+            <span style="background:#e8f8ed; color:#34c759; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Легкий</span>
         </div>
-    </main>
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Найпопулярніший. Не потребує термокамери.</p>
+        <div class="detail-item"><span>🌡 Сопло:</span><strong>190 - 220 °C</strong></div>
+        <div class="detail-item"><span>🛏 Стіл:</span><strong>50 - 60 °C</strong></div>
+        <div class="detail-item"><span>💨 Обдув:</span><strong>100%</strong></div>
+    </div>
 
-    <section class="card settings-card">
-        <div class="settings-header" onclick="toggleSettings()">
-            <h3>Налаштування тарифів (<span id="selected-material-label">PLA</span>)</h3>
-            <span id="chevron" class="chevron"></span>
+    <div class="card" style="margin-bottom: 16px; border-left: 5px solid #0071e3;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;">PETG</h3>
+            <span style="background:#e0f0ff; color:#0071e3; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Середній</span>
         </div>
-        <div id="settingsContent" class="settings-content">
-            <div class="input-group">
-                <label>Ціна за кг (₴)</label>
-                <input type="number" inputmode="decimal" id="priceKg" oninput="saveManualPrice()">
-            </div>
-            <div class="input-group">
-                <label>Тариф кВт (₴)</label>
-                <input type="number" inputmode="decimal" id="priceKwt" oninput="calculate()">
-            </div>
-            <div class="input-group">
-                <label>Потужність (Вт)</label>
-                <input type="number" inputmode="decimal" id="power" oninput="calculate()">
-            </div>
-            <div class="input-group">
-                <label>Націнка (%)</label>
-                <input type="number" inputmode="decimal" id="markup" oninput="calculate()">
-            </div>
-        </div>
-    </section>
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Золота середина. Міцний, але "сопливить".</p>
+        <div class="detail-item"><span>🌡 Сопло:</span><strong>230 - 250 °C</strong></div>
+        <div class="detail-item"><span>🛏 Стіл:</span><strong>70 - 80 °C</strong></div>
+        <div class="detail-item"><span>💨 Обдув:</span><strong>30 - 50%</strong></div>
+    </div>
 
-    <section class="card info-card">
-        <h3>ℹ️ Інформація про сервіс</h3>
-        <p>
-            Система автоматично додає <strong>3% амортизації</strong> обладнання до вартості матеріалів та енергії.
-        </p>
-        <p>
-            Всі показники: ціну на пластик, тариф на світло, потужність принтера та бажану націнку — ви можете вписати вручну в блоці "Налаштування тарифів" індивідуально.
-        </p>
-    </section>
-
-    <div class="footer-container">
-        <div class="card detail-card">
-            <h3>Витрати</h3>
-            <div class="detail-item"><span>Пластик</span><span id="res-material" style="font-weight: 500;">0 ₴</span></div>
-            <div class="detail-item"><span>Енергія</span><span id="res-energy" style="font-weight: 500;">0 ₴</span></div>
-            <div class="detail-item"><span>Амортизація (3%)</span><span id="res-amortization" style="font-weight: 500;">0 ₴</span></div>
+    <div class="card" style="margin-bottom: 16px; border-left: 5px solid #ff3b30;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;">ABS / ASA</h3>
+            <span style="background:#ffe5e3; color:#ff3b30; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Складний</span>
         </div>
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Термостійкий. Потрібна закрита камера (усадка).</p>
+        <div class="detail-item"><span>🌡 Сопло:</span><strong>240 - 260 °C</strong></div>
+        <div class="detail-item"><span>🛏 Стіл:</span><strong>100 - 110 °C</strong></div>
+        <div class="detail-item"><span>💨 Обдув:</span><strong>Вимкнено</strong></div>
+    </div>
 
-        <div class="summary-card">
-            <div class="stat-box"><label>Собівартість</label><span id="total-cost" class="price">0 ₴</span></div>
-            <div class="stat-box"><label>Ціна продажу</label><span id="sell-price" class="price">0 ₴</span></div>
-            <div class="stat-box profit-box"><label>Прибуток</label><span id="profit" class="price">0 ₴</span></div>
+     <div class="card" style="margin-bottom: 16px; border-left: 5px solid #ff9500;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0;">TPU</h3>
+            <span style="background:#fff5e0; color:#ff9500; padding:4px 8px; border-radius:6px; font-size:0.8rem; font-weight:600;">Гнучкий</span>
         </div>
+        <p style="font-size:0.9rem; color:var(--text-muted); margin-bottom:15px;">Гумоподібний. Друкувати дуже повільно.</p>
+        <div class="detail-item"><span>🌡 Сопло:</span><strong>200 - 220 °C</strong></div>
+        <div class="detail-item"><span>🛏 Стіл:</span><strong>40 - 60 °C</strong></div>
     </div>
 </div>
 
 <script>
     const defaultPrices = {'PLA':800, 'PETG':750, 'ABS':1200, 'TPU':2500, 'Custom':1000};
     const fields = ['priceKwt', 'power', 'markup', 'weight', 'hours', 'materialType'];
-    
-    // Ініціалізація Telegram WebApp
     const tg = window.Telegram.WebApp;
 
     window.onload = () => {
-        // 1. Налаштування Telegram
-        tg.ready(); // Повідомляємо, що додаток завантажився
-        tg.expand(); // Розгортаємо на весь екран
-
-        // Перевіряємо, чи ми в Телеграмі
+        tg.ready(); tg.expand();
+        // Налаштування теми
         if (tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0 || tg.colorScheme) {
             document.body.classList.add('tg-mode');
-            document.getElementById('themeBtn').style.display = 'none'; // Ховаємо кнопку в ТГ
-            
-            // Налаштування кольору хедера (шторки)
-            tg.setHeaderColor('secondary_bg_color'); 
-        } else {
-            // Звичайна логіка для браузера
-            if (localStorage.getItem('theme') === 'dark') {
-                document.body.classList.add('dark-mode');
-                document.getElementById('themeBtn').innerText = '☀️';
-            }
+            document.getElementById('themeBtn').style.display = 'none';
+            tg.setHeaderColor('secondary_bg_color');
+        } else if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeBtn').innerText = '☀️';
         }
 
-        // 2. Відновлення даних
+        // Відновлення даних
         fields.forEach(id => {
             const saved = localStorage.getItem(id);
             if (saved) document.getElementById(id).value = saved;
         });
         loadMaterialPrice();
 
-        // ВИДАЛЕНО: Блок налаштування MainButton
+        // Ініціалізація кнопки "Назад"
+        tg.BackButton.onClick(() => switchTab('calc'));
     };
+
+    function switchTab(tabId) {
+        document.getElementById('tab-calc').style.display = 'none';
+        document.getElementById('tab-lib').style.display = 'none';
+        document.getElementById('btn-calc').className = 'tab-btn';
+        document.getElementById('btn-lib').className = 'tab-btn';
+
+        document.getElementById('tab-' + tabId).style.display = 'block';
+        document.getElementById('btn-' + tabId).className = 'tab-btn active';
+
+        if (tabId === 'calc') tg.BackButton.hide();
+        else tg.BackButton.show();
+        
+        window.scrollTo(0,0);
+    }
 
     function toggleTheme() {
         const isDark = document.body.classList.toggle('dark-mode');
@@ -368,7 +339,7 @@
         const total = cMat + cEn + cAmort;
         const sell = total * (1 + d('markup') / 100);
 
-        const fmt = (v) => v.toFixed(0) + ' ₴'; // Прибрав копійки для чистоти UI
+        const fmt = (v) => v.toFixed(0) + ' ₴';
         const fmtFull = (v) => v.toFixed(2) + ' ₴';
 
         document.getElementById('res-material').innerText = fmtFull(cMat);
@@ -377,8 +348,6 @@
         document.getElementById('total-cost').innerText = fmtFull(total);
         document.getElementById('sell-price').innerText = fmtFull(sell);
         document.getElementById('profit').innerText = fmtFull(sell - total);
-
-        // ВИДАЛЕНО: Логіка оновлення MainButton
     }
 </script>
 </body>
