@@ -120,6 +120,9 @@
         .stat-box.profit-box .price { color: #34c759; }
         body.dark-mode .stat-box.profit-box .price, body.tg-mode .stat-box.profit-box .price { color: #30d158; }
 
+        /* Стиль для ціни за штуку (маленький текст) */
+        .price-per-item { font-size: 0.75rem; opacity: 0.9; font-weight: 400; display: block; margin-top: 2px; }
+
         .chevron::after { content: '↓'; font-size: 0.8rem; margin-left: 8px; transition: transform 0.2s; display: inline-block; }
         .active-chevron::after { transform: rotate(180deg); }
 
@@ -151,6 +154,10 @@
                         <option value="TPU">TPU</option>
                         <option value="Custom">Custom</option>
                     </select>
+                </div>
+                <div class="input-group">
+                    <label>Кількість (шт)</label>
+                    <input type="number" inputmode="decimal" id="quantity" oninput="calculate()" placeholder="1" value="1">
                 </div>
                 <div class="input-group">
                     <label>Вага (г)</label>
@@ -206,7 +213,7 @@
         <section class="card info-card">
             <h3>ℹ️ Інформація про сервіс</h3>
             <p>Система автоматично додає <strong>10% амортизації</strong> обладнання до вартості матеріалів та енергії.</p>
-            <p>Всі показники можна змінити вручну в блоці "Налаштування тарифів".</p>
+            <p>Якщо ви вказали кількість > 1, система покаже вартість однієї штуки під загальною сумою.</p>
         </section>
 
     </div>
@@ -261,12 +268,12 @@
 
 <script>
     const defaultPrices = {'PLA':800, 'PETG':750, 'ABS':1200, 'TPU':2500, 'Custom':1000};
-    const fields = ['priceKwt', 'power', 'markup', 'weight', 'hours', 'materialType'];
+    // Додав 'quantity' у список полів, які треба зберігати
+    const fields = ['priceKwt', 'power', 'markup', 'weight', 'hours', 'materialType', 'quantity'];
     const tg = window.Telegram.WebApp;
 
     window.onload = () => {
         tg.ready(); tg.expand();
-        // Налаштування теми
         if (tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0 || tg.colorScheme) {
             document.body.classList.add('tg-mode');
             document.getElementById('themeBtn').style.display = 'none';
@@ -276,14 +283,12 @@
             document.getElementById('themeBtn').innerText = '☀️';
         }
 
-        // Відновлення даних
         fields.forEach(id => {
             const saved = localStorage.getItem(id);
             if (saved) document.getElementById(id).value = saved;
         });
         loadMaterialPrice();
 
-        // Ініціалізація кнопки "Назад"
         tg.BackButton.onClick(() => switchTab('calc'));
     };
 
@@ -332,10 +337,14 @@
     function calculate() {
         const d = (id) => parseFloat(document.getElementById(id).value) || 0;
         fields.forEach(id => localStorage.setItem(id, document.getElementById(id).value));
+        
+        // Отримуємо кількість (за замовчуванням 1, щоб не ділити на 0)
+        let q = d('quantity');
+        if (q < 1) q = 1;
 
         const cMat = (d('weight') / 1000) * d('priceKg');
         const cEn = (d('power') * d('hours') / 1000) * d('priceKwt');
-        const cAmort = (cMat + cEn) * 0.10; // ЗМІНЕНО НА 10%
+        const cAmort = (cMat + cEn) * 0.10; // 10% амортизації
         const total = cMat + cEn + cAmort;
         const sell = total * (1 + d('markup') / 100);
 
@@ -345,9 +354,19 @@
         document.getElementById('res-material').innerText = fmtFull(cMat);
         document.getElementById('res-energy').innerText = fmtFull(cEn);
         document.getElementById('res-amortization').innerText = fmtFull(cAmort);
-        document.getElementById('total-cost').innerText = fmtFull(total);
-        document.getElementById('sell-price').innerText = fmtFull(sell);
-        document.getElementById('profit').innerText = fmtFull(sell - total);
+
+        // ЛОГІКА ВІДОБРАЖЕННЯ ЦІНИ
+        if (q > 1) {
+            // Якщо більше 1 шт, показуємо загальну ціну + ціну за шт
+            document.getElementById('total-cost').innerHTML = fmtFull(total) + `<span class="price-per-item">(${fmtFull(total/q)} / шт)</span>`;
+            document.getElementById('sell-price').innerHTML = fmtFull(sell) + `<span class="price-per-item">(${fmtFull(sell/q)} / шт)</span>`;
+            document.getElementById('profit').innerHTML = fmtFull(sell - total) + `<span class="price-per-item">(${fmtFull((sell - total)/q)} / шт)</span>`;
+        } else {
+            // Якщо 1 шт, показуємо як раніше
+            document.getElementById('total-cost').innerText = fmtFull(total);
+            document.getElementById('sell-price').innerText = fmtFull(sell);
+            document.getElementById('profit').innerText = fmtFull(sell - total);
+        }
     }
 </script>
 </body>
