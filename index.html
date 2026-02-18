@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-Q46BT674JH"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-Q46BT674JH');
-</script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-20YWHMERD9"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-20YWHMERD9');
+    </script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -122,7 +120,7 @@
         .stat-box.profit-box .price { color: #34c759; }
         body.dark-mode .stat-box.profit-box .price, body.tg-mode .stat-box.profit-box .price { color: #30d158; }
 
-        /* Стиль для ціни за штуку (маленький текст) */
+        /* Стиль для ціни за штуку */
         .price-per-item { font-size: 0.75rem; opacity: 0.9; font-weight: 400; display: block; margin-top: 2px; }
 
         .chevron::after { content: '↓'; font-size: 0.8rem; margin-left: 8px; transition: transform 0.2s; display: inline-block; }
@@ -191,6 +189,10 @@
                     <input type="number" inputmode="decimal" id="power" oninput="calculate()">
                 </div>
                 <div class="input-group">
+                    <label>Упакування (₴)</label>
+                    <input type="number" inputmode="decimal" id="packingPrice" oninput="calculate()" placeholder="0">
+                </div>
+                <div class="input-group">
                     <label>Націнка (%)</label>
                     <input type="number" inputmode="decimal" id="markup" oninput="calculate()">
                 </div>
@@ -199,10 +201,11 @@
 
         <div class="footer-container">
             <div class="card detail-card">
-                <h3>Деталізація</h3>
+                <h3>Витрати</h3>
                 <div class="detail-item"><span>Пластик</span><span id="res-material">0 ₴</span></div>
                 <div class="detail-item"><span>Енергія</span><span id="res-energy">0 ₴</span></div>
                 <div class="detail-item"><span>Амортизація (10%)</span><span id="res-amortization">0 ₴</span></div>
+                <div class="detail-item"><span>Упакування</span><span id="res-packing">0 ₴</span></div>
             </div>
 
             <div class="summary-card">
@@ -214,8 +217,8 @@
 
         <section class="card info-card">
             <h3>ℹ️ Інформація про сервіс</h3>
-            <p>Система автоматично додає <strong>10% амортизації</strong> обладнання до вартості матеріалів та енергії.</p>
-            <p>Якщо ви вказали кількість > 1, система покаже вартість однієї штуки під загальною сумою.</p>
+            <p>Система автоматично додає <strong>10% амортизації</strong> та вартість упаковки до собівартості.</p>
+            <p>Якщо вказати кількість > 1, система покаже вартість однієї штуки під загальною сумою.</p>
         </section>
 
     </div>
@@ -270,8 +273,7 @@
 
 <script>
     const defaultPrices = {'PLA':800, 'PETG':750, 'ABS':1200, 'TPU':2500, 'Custom':1000};
-    // Додав 'quantity' у список полів, які треба зберігати
-    const fields = ['priceKwt', 'power', 'markup', 'weight', 'hours', 'materialType', 'quantity'];
+    const fields = ['priceKwt', 'power', 'markup', 'weight', 'hours', 'materialType', 'quantity', 'packingPrice'];
     const tg = window.Telegram.WebApp;
 
     window.onload = () => {
@@ -340,14 +342,15 @@
         const d = (id) => parseFloat(document.getElementById(id).value) || 0;
         fields.forEach(id => localStorage.setItem(id, document.getElementById(id).value));
         
-        // Отримуємо кількість (за замовчуванням 1, щоб не ділити на 0)
         let q = d('quantity');
         if (q < 1) q = 1;
 
         const cMat = (d('weight') / 1000) * d('priceKg');
         const cEn = (d('power') * d('hours') / 1000) * d('priceKwt');
-        const cAmort = (cMat + cEn) * 0.10; // 10% амортизації
-        const total = cMat + cEn + cAmort;
+        const cAmort = (cMat + cEn) * 0.10; 
+        const cPack = d('packingPrice'); // Ціна упаковки
+        
+        const total = cMat + cEn + cAmort + cPack;
         const sell = total * (1 + d('markup') / 100);
 
         const fmt = (v) => v.toFixed(0) + ' ₴';
@@ -356,15 +359,15 @@
         document.getElementById('res-material').innerText = fmtFull(cMat);
         document.getElementById('res-energy').innerText = fmtFull(cEn);
         document.getElementById('res-amortization').innerText = fmtFull(cAmort);
+        
+        // Відображаємо ціну упаковки у деталізації
+        document.getElementById('res-packing').innerText = fmtFull(cPack);
 
-        // ЛОГІКА ВІДОБРАЖЕННЯ ЦІНИ
         if (q > 1) {
-            // Якщо більше 1 шт, показуємо загальну ціну + ціну за шт
             document.getElementById('total-cost').innerHTML = fmtFull(total) + `<span class="price-per-item">(${fmtFull(total/q)} / шт)</span>`;
             document.getElementById('sell-price').innerHTML = fmtFull(sell) + `<span class="price-per-item">(${fmtFull(sell/q)} / шт)</span>`;
             document.getElementById('profit').innerHTML = fmtFull(sell - total) + `<span class="price-per-item">(${fmtFull((sell - total)/q)} / шт)</span>`;
         } else {
-            // Якщо 1 шт, показуємо як раніше
             document.getElementById('total-cost').innerText = fmtFull(total);
             document.getElementById('sell-price').innerText = fmtFull(sell);
             document.getElementById('profit').innerText = fmtFull(sell - total);
