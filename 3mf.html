@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D Print Studio — 3MF vBETA</title>
+    <title>3D Print Studio — 3MF</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -146,6 +146,10 @@
             <div class="input-group">
                 <label>Виробів у файлі (шт)</label>
                 <input type="number" inputmode="decimal" id="qty" value="1">
+            </div>
+            <div class="input-group">
+                <label>Кількість для розрахунку (×)</label>
+                <input type="number" inputmode="numeric" id="mult" value="1" min="1" step="1">
             </div>
             <div class="input-group est-only">
                 <label>Заповнення</label>
@@ -568,16 +572,20 @@ function refresh() {
     const sliced = !!an.plates;
     document.querySelectorAll('.est-only').forEach(el => el.classList.toggle('disabled-row', sliced));
 
-    let grams, seconds;
+    let baseGrams, baseSeconds;
     if (sliced) {
         const p = selectedPlate();
-        grams = p.weight; seconds = p.seconds;
+        baseGrams = p.weight; baseSeconds = p.seconds;
     } else {
         const e = estimate(an, s);
-        grams = e.grams; seconds = e.seconds;
+        baseGrams = e.grams; baseSeconds = e.seconds;
     }
+    const items = Math.max(1, parseFloat($('qty').value) || 1);          // виробів в одному файлі
+    const mult = Math.max(1, Math.floor(parseFloat($('mult').value) || 1)); // скільки разів друкуємо файл
+    const grams = baseGrams * mult;
+    const seconds = baseSeconds * mult;
     const hours = seconds / 3600;
-    const q = Math.max(1, parseFloat($('qty').value) || 1);
+    const q = items * mult;                                               // всього виробів
 
     // та сама формула, що в калькуляторі
     const num = (k, d) => { const v = parseFloat(lsGet(k)); return Number.isFinite(v) ? v : d; };
@@ -591,9 +599,10 @@ function refresh() {
     const f2 = v => v.toFixed(2) + ' ₴';
     const perItem = v => q > 1 ? `<span class="price-per-item">(${f2(v / q)} / шт)</span>` : '';
 
-    $('rWeight').textContent = grams.toFixed(1) + ' г';
-    $('rTime').textContent = fmtTime(seconds);
-    $('rVol').textContent = (an.volume / 1000).toFixed(1) + ' см³';
+    const sub = t => mult > 1 ? `<span class="price-per-item">(${t} × ${mult})</span>` : '';
+    $('rWeight').innerHTML = grams.toFixed(1) + ' г' + sub(baseGrams.toFixed(1) + ' г');
+    $('rTime').innerHTML = fmtTime(seconds) + sub(fmtTime(baseSeconds));
+    $('rVol').innerHTML = (an.volume * mult / 1000).toFixed(1) + ' см³';
     $('rCost').innerHTML = f2(total) + perItem(total);
     $('rSell').innerHTML = f2(sell) + perItem(sell);
     $('rProfit').innerHTML = f2(sell - total) + perItem(sell - total);
@@ -603,9 +612,104 @@ function refresh() {
     badge.textContent = sliced ? '✓ Точні дані зі слайсера' : '≈ Орієнтовно (±20–30%)';
 
     lastResult = { W: grams, H: hours, q, type: s.type };
+    saveState();
+}
+
+// ---------- збереження стану між візитами ----------
+function saveState() {
+    if (!an) return;
+    lsSet('mf3_state', JSON.stringify({
+        name: fileName,
+        mat: $('selMat').value, infill: $('selInfill').value, walls: $('selWalls').value,
+        layer: $('selLayer').value, speed: $('selSpeed').value, plate: $('selPlate').value,
+        qty: $('qty').value, mult: $('mult').value
+    }));
+}
+
+function restoreState(st) {
+    if (!st) return;
+    if (st.mat) $('selMat').value = st.mat;
+    setSel('selInfill', parseFloat(st.infill), v => v + '%');
+    setSel('selWalls', parseFloat(st.walls), v => v);
+    setSel('selLayer', parseFloat(st.layer), v => v + ' мм');
+    if (st.speed) $('selSpeed').value = st.speed;
+    if (st.plate && [...$('selPlate').options].some(o => o.value === st.plate)) $('selPlate').value = st.plate;
+    if (st.qty) $('qty').value = st.qty;
+    if (st.mult) $('mult').value = st.mult;
+}
+
+// Останній файл зберігається в IndexedDB (до завантаження наступного)
+const IDB_STORE = 'files';
+function idbOpen() {
+    return new Promise((res, rej) => {
+        if (!window.indexedDB) return rej(new Error('IndexedDB недоступна'));
+        const r = indexedDB.open('mf3store', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore(IDB_STORE);
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+    });
+}
+async function idbSave(name, buf) {
+    try {
+        const db = await idbOpen();
+        await new Promise((res, rej) => {
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).put({ name, buf }, 'last');
+            tx.oncomplete = res; tx.onerror = tx.onabort = () => rej(tx.error);
+        });
+        db.close();
+    } catch (e) { console.warn('Не вдалося зберегти файл', e); }
+}
+async function idbLoad() {
+    try {
+        const db = await idbOpen();
+        const rec = await new Promise((res, rej) => {
+            const r = db.transaction(IDB_STORE).objectStore(IDB_STORE).get('last');
+            r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+        });
+        db.close();
+        return rec || null;
+    } catch (e) { return null; }
 }
 
 // ---------- завантаження файлу ----------
+async function loadBuffer(buf, name, saved) {
+    an = await analyze3mf(buf);
+    fileName = name;
+
+    applySettings(an.settings);
+    $('qty').value = Math.max(1, an.items);
+    $('mult').value = 1;
+
+    const ps = $('selPlate');
+    ps.innerHTML = '';
+    if (an.plates && an.plates.length > 1) {
+        an.plates.forEach(p => {
+            const o = document.createElement('option');
+            o.value = p.index;
+            o.textContent = `Плита ${p.index} · ${p.weight.toFixed(1)} г · ${fmtTime(p.seconds)}`;
+            ps.appendChild(o);
+        });
+        const all = document.createElement('option');
+        all.value = 'all'; all.textContent = 'Усі плити разом';
+        ps.appendChild(all);
+        $('plateRow').style.display = '';
+    } else {
+        $('plateRow').style.display = 'none';
+    }
+
+    if (saved) restoreState(saved);
+
+    $('viewerCard').style.display = '';
+    $('paramsCard').style.display = '';
+    $('results').style.display = '';
+    const sz = an.size.map(v => v.toFixed(1)).join(' × ');
+    $('fileInfo').textContent = `${fileName} · ${sz} мм · ${an.triangles.toLocaleString('uk-UA')} трикутників`;
+
+    showModel();
+    refresh();
+}
+
 async function handleFile(f) {
     if (!f) return;
     setStatus('Обробка файлу…');
@@ -614,37 +718,8 @@ async function handleFile(f) {
         if (typeof DecompressionStream === 'undefined') throw new Error('Цей браузер не вміє розпаковувати файли. Оновіть браузер або Telegram.');
         const buf = await f.arrayBuffer();
         await new Promise(r => setTimeout(r, 30));
-        an = await analyze3mf(buf);
-        fileName = f.name;
-
-        applySettings(an.settings);
-        $('qty').value = Math.max(1, an.items);
-
-        const ps = $('selPlate');
-        ps.innerHTML = '';
-        if (an.plates && an.plates.length > 1) {
-            an.plates.forEach(p => {
-                const o = document.createElement('option');
-                o.value = p.index;
-                o.textContent = `Плита ${p.index} · ${p.weight.toFixed(1)} г · ${fmtTime(p.seconds)}`;
-                ps.appendChild(o);
-            });
-            const all = document.createElement('option');
-            all.value = 'all'; all.textContent = 'Усі плити разом';
-            ps.appendChild(all);
-            $('plateRow').style.display = '';
-        } else {
-            $('plateRow').style.display = 'none';
-        }
-
-        $('viewerCard').style.display = '';
-        $('paramsCard').style.display = '';
-        $('results').style.display = '';
-        const sz = an.size.map(v => v.toFixed(1)).join(' × ');
-        $('fileInfo').textContent = `${fileName} · ${sz} мм · ${an.triangles.toLocaleString('uk-UA')} трикутників`;
-
-        showModel();
-        refresh();
+        await loadBuffer(buf, f.name, null);
+        idbSave(f.name, buf);          // запам'ятати до наступного файлу
         setStatus('');
     } catch (e) {
         console.error(e);
@@ -683,6 +758,7 @@ drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
 
 ['selMat', 'selInfill', 'selWalls', 'selLayer', 'selSpeed', 'selPlate'].forEach(id => $(id).addEventListener('change', refresh));
 $('qty').addEventListener('input', refresh);
+$('mult').addEventListener('input', refresh);
 
 $('btnTransfer').addEventListener('click', () => {
     if (!lastResult) return;
@@ -692,6 +768,23 @@ $('btnTransfer').addEventListener('click', () => {
     lsSet('quantity', String(lastResult.q));
     location.href = 'index.html';
 });
+
+// Відновити останній файл і налаштування після повернення з калькулятора
+(async function restoreLast() {
+    const rec = await idbLoad();
+    if (!rec || !rec.buf) return;
+    setStatus('Відновлення останнього файлу…');
+    try {
+        let saved = null;
+        try { saved = JSON.parse(lsGet('mf3_state') || 'null'); } catch (e) {}
+        if (saved && saved.name !== rec.name) saved = null;
+        await loadBuffer(rec.buf, rec.name, saved);
+        setStatus('');
+    } catch (e) {
+        console.error(e);
+        setStatus('');
+    }
+})();
 
 // ==================== 3D-перегляд (WebGL2, без бібліотек) ====================
 function createViewer(canvas) {
