@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D Print Studio — 3MF</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-body: #f5f5f7;
+            --bg-card: #ffffff;
+            --bg-darker: #fafafa;
+            --text-main: #000000;
+            --text-muted: #48484a;
+            --primary: #0071e3;
+            --border: #d2d2d7;
+            --card-radius: 12px;
+        }
+
+        body.tg-mode {
+            --bg-body: var(--tg-theme-bg-color, #f5f5f7);
+            --bg-card: var(--tg-theme-secondary-bg-color, #ffffff);
+            --bg-darker: var(--tg-theme-header-bg-color, #fafafa);
+            --text-main: var(--tg-theme-text-color, #000000);
+            --text-muted: var(--tg-theme-hint-color, #555555);
+            --primary: var(--tg-theme-button-color, #0071e3);
+            --border: rgba(128, 128, 128, 0.3);
+        }
+
+        body.dark-mode {
+            --bg-body: #000000;
+            --bg-card: #1c1c1e;
+            --bg-darker: #121212;
+            --text-main: #ffffff;
+            --text-muted: #98989d;
+            --border: #38383a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-body);
+            margin: 0;
+            padding: 16px 16px 40px 16px;
+            color: var(--text-main);
+            line-height: 1.4;
+            transition: background 0.3s, color 0.3s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .back-link { display: inline-block; margin-bottom: 4px; color: var(--primary); text-decoration: none; font-weight: 600; font-size: 0.95rem; }
+        .main-title { text-align: center; margin: 6px 0 20px 0; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
+
+        .dashboard { display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 600px; margin: 0 auto; }
+
+        .card {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: var(--card-radius);
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        h3 { margin-bottom: 12px; font-size: 1rem; font-weight: 600; color: var(--text-main); }
+
+        .inputs-row { display: flex; flex-wrap: wrap; gap: 12px; }
+        .input-group { flex: 1 1 140px; margin-bottom: 4px; }
+        label { display: block; margin-bottom: 6px; font-size: 0.8rem; font-weight: 600; color: var(--text-main); opacity: 0.8; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text-main); font-size: 1rem; outline: none; box-sizing: border-box; appearance: none; font-weight: 500; }
+        input:focus, select:focus { border-color: var(--primary); }
+
+        .drop { border: 2px dashed var(--border); text-align: center; padding: 28px 16px; cursor: pointer; transition: border-color 0.2s; }
+        .drop.over { border-color: var(--primary); }
+        .drop .big { font-size: 2.2rem; }
+        .drop h3 { margin: 8px 0 0 0; }
+        .drop p { margin: 6px 0 0 0; color: var(--text-muted); font-size: 0.85rem; }
+
+        .status { text-align: center; font-size: 0.9rem; color: var(--text-muted); min-height: 1.2em; }
+        .status.err { color: #ff3b30; font-weight: 600; }
+
+        #cv { width: 100%; height: 300px; display: block; border-radius: 10px; background: var(--bg-darker); touch-action: none; cursor: grab; }
+        .viewer-fallback { padding: 30px 10px; text-align: center; color: var(--text-muted); font-size: 0.9rem; background: var(--bg-darker); border-radius: 10px; }
+        .meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.85rem; color: var(--text-muted); flex-wrap: wrap; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; }
+        .badge.exact { background: #e8f8ed; color: #1f9d45; }
+        .badge.est { background: #fff5e0; color: #c77700; }
+        body.dark-mode .badge.exact { background: #12301c; color: #30d158; }
+        body.dark-mode .badge.est { background: #3a2a0a; color: #ff9f0a; }
+
+        .disabled-row { opacity: 0.4; pointer-events: none; }
+
+        .summary-card { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: var(--text-main); color: var(--bg-card); padding: 20px; border-radius: var(--card-radius); align-items: center; }
+        .stat-box { text-align: center; }
+        .stat-box label { font-size: 0.75rem; opacity: 0.8; color: var(--bg-card); font-weight: 500; }
+        .stat-box .price { font-size: 1.15rem; font-weight: 700; display: block; margin-top: 4px; }
+        .stat-box.profit-box .price { color: #34c759; }
+        body.dark-mode .stat-box.profit-box .price, body.tg-mode .stat-box.profit-box .price { color: #30d158; }
+        .price-per-item { font-size: 0.75rem; opacity: 0.9; font-weight: 400; display: block; margin-top: 2px; }
+        .results-stack { display: grid; gap: 12px; }
+
+        .btn-primary { width: 100%; padding: 14px; border: none; border-radius: 10px; background: var(--primary); color: #fff; font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .btn-primary:active { opacity: 0.85; }
+
+        .info-card { background: var(--bg-darker); font-size: 0.9rem; }
+        .info-card p { margin: 0 0 10px 0; color: var(--text-main); opacity: 0.85; line-height: 1.5; }
+        .info-card p:last-child { margin-bottom: 0; }
+        .info-card strong { color: var(--text-main); font-weight: 700; opacity: 1; }
+    </style>
+</head>
+<body>
+
+<a class="back-link" href="index.html">← До калькулятора</a>
+<h1 class="main-title">Розрахунок за 3MF</h1>
+
+<div class="dashboard">
+
+    <div class="card drop" id="drop">
+        <div class="big">📦</div>
+        <h3>Оберіть або перетягніть .3mf файл</h3>
+        <p>Файл обробляється на вашому пристрої й нікуди не надсилається</p>
+        <input type="file" id="file" style="display:none">
+    </div>
+    <div class="status" id="status"></div>
+
+    <div class="card" id="viewerCard" style="display:none;">
+        <canvas id="cv"></canvas>
+        <div class="viewer-fallback" id="viewerFallback" style="display:none;">3D-перегляд недоступний на цьому пристрої, але розрахунок працює.</div>
+        <div class="meta">
+            <span id="fileInfo"></span>
+            <span id="badge" class="badge est"></span>
+        </div>
+    </div>
+
+    <section class="card" id="paramsCard" style="display:none;">
+        <h3>Параметри</h3>
+        <div class="inputs-row">
+            <div class="input-group">
+                <label>Матеріал</label>
+                <select id="selMat">
+                    <option value="PLA">PLA</option>
+                    <option value="PETG">PETG</option>
+                    <option value="ABS">ABS / ASA</option>
+                    <option value="TPU">TPU</option>
+                    <option value="Custom">Custom</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Виробів у файлі (шт)</label>
+                <input type="number" inputmode="decimal" id="qty" value="1">
+            </div>
+            <div class="input-group est-only">
+                <label>Заповнення</label>
+                <select id="selInfill"></select>
+            </div>
+            <div class="input-group est-only">
+                <label>Стінки (шт)</label>
+                <select id="selWalls"></select>
+            </div>
+            <div class="input-group est-only">
+                <label>Висота шару</label>
+                <select id="selLayer"></select>
+            </div>
+            <div class="input-group est-only">
+                <label>Швидкість принтера</label>
+                <select id="selSpeed"></select>
+            </div>
+            <div class="input-group" id="plateRow" style="display:none; flex: 1 1 100%;">
+                <label>Плита (дані зі слайсера)</label>
+                <select id="selPlate"></select>
+            </div>
+        </div>
+    </section>
+
+    <div class="results-stack" id="results" style="display:none;">
+        <div class="summary-card">
+            <div class="stat-box"><label>Вага</label><span id="rWeight" class="price">0 г</span></div>
+            <div class="stat-box"><label>Час друку</label><span id="rTime" class="price">0</span></div>
+            <div class="stat-box"><label>Об'єм</label><span id="rVol" class="price">0</span></div>
+        </div>
+        <div class="summary-card">
+            <div class="stat-box"><label>Собівартість</label><span id="rCost" class="price">0 ₴</span></div>
+            <div class="stat-box"><label>Ціна продажу</label><span id="rSell" class="price">0 ₴</span></div>
+            <div class="stat-box profit-box"><label>Прибуток</label><span id="rProfit" class="price">0 ₴</span></div>
+        </div>
+        <button class="btn-primary" id="btnTransfer">Передати в калькулятор →</button>
+    </div>
+
+    <section class="card info-card">
+        <h3>ℹ️ Як це працює</h3>
+        <p>Якщо 3MF збережений <strong>після нарізки</strong> у Bambu Studio чи OrcaSlicer, вага й час беруться прямо з файлу і будуть <strong>точними</strong>.</p>
+        <p>В іншому разі вага й час рахуються за геометрією моделі, щільністю пластику, заповненням і стінками. Це <strong>орієнтовна оцінка (±20–30%)</strong>: точний час знає лише слайсер. Підтримки не враховуються.</p>
+        <p>Ціна рахується за тими ж тарифами й формулою, що й у калькуляторі (тарифи беруться з його налаштувань).</p>
+    </section>
+</div>
+
+<script>
+// ==== CORE START (чиста логіка без DOM)
+const UNIT_MM = { micron: 0.001, millimeter: 1, centimeter: 10, inch: 25.4, foot: 304.8, meter: 1000 };
+const IDENT = [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0];
+const DENSITY = { PLA: 1.24, PETG: 1.27, ABS: 1.05, TPU: 1.21, Custom: 1.24 };   // г/см³
+const FLOW = { PLA: 9, PETG: 7, ABS: 8, TPU: 3, Custom: 8 };                     // середній потік, мм³/с
+
+function parseAttrs(s) {
+    const o = {};
+    const re = /([\w:.\-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
+    let m;
+    while ((m = re.exec(s))) o[m[1]] = m[2] !== undefined ? m[2] : m[3];
+    return o;
+}
+
+function normPath(p) { return String(p).replace(/^\/+/, ''); }
+
+async function inflateRaw(bytes) {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function openZip(buffer) {
+    const u8 = new Uint8Array(buffer);
+    const dv = new DataView(buffer);
+    let eocd = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
+        if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    }
+    if (eocd < 0) throw new Error('Це не схоже на 3MF (файл не є ZIP-архівом)');
+    const total = dv.getUint16(eocd + 10, true);
+    let p = dv.getUint32(eocd + 16, true);
+    const dec = new TextDecoder();
+    const entries = new Map();
+    for (let n = 0; n < total; n++) {
+        if (p + 46 > u8.length || dv.getUint32(p, true) !== 0x02014b50) break;
+        const method = dv.getUint16(p + 10, true);
+        const csize = dv.getUint32(p + 20, true);
+        const nlen = dv.getUint16(p + 28, true);
+        const elen = dv.getUint16(p + 30, true);
+        const clen = dv.getUint16(p + 32, true);
+        const lho = dv.getUint32(p + 42, true);
+        const name = dec.decode(u8.subarray(p + 46, p + 46 + nlen));
+        entries.set(normPath(name).toLowerCase(), { name, method, csize, lho });
+        p += 46 + nlen + elen + clen;
+    }
+    return {
+        names: [...entries.values()].map(e => e.name),
+        async bytes(name) {
+            const e = entries.get(normPath(name).toLowerCase());
+            if (!e) return null;
+            if (e.csize === 0xFFFFFFFF || e.lho === 0xFFFFFFFF) throw new Error('Файл завеликий або у форматі ZIP64, який не підтримується');
+            const lh = e.lho;
+            if (dv.getUint32(lh, true) !== 0x04034b50) throw new Error('Пошкоджений архів 3MF');
+            const start = lh + 30 + dv.getUint16(lh + 26, true) + dv.getUint16(lh + 28, true);
+            const raw = u8.subarray(start, start + e.csize);
+            if (e.method === 0) return raw;
+            if (e.method === 8) return inflateRaw(raw);
+            throw new Error('Непідтримуваний метод стиснення у 3MF');
+        },
+        async text(name) {
+            const b = await this.bytes(name);
+            return b ? dec.decode(b) : null;
+        }
+    };
+}
+
+function parseT(s) {
+    if (!s) return IDENT;
+    const a = String(s).trim().split(/[\s,]+/).map(Number);
+    return a.length === 12 && a.every(Number.isFinite) ? a : IDENT;
+}
+
+// Спочатку застосувати a, потім b (3MF: рядкові вектори, зсув у останніх трьох числах)
+function mulT(a, b) {
+    const r = new Array(12);
+    for (let i = 0; i < 3; i++)
+        for (let j = 0; j < 3; j++)
+            r[i * 3 + j] = a[i * 3] * b[j] + a[i * 3 + 1] * b[3 + j] + a[i * 3 + 2] * b[6 + j];
+    for (let j = 0; j < 3; j++)
+        r[9 + j] = a[9] * b[j] + a[10] * b[3 + j] + a[11] * b[6 + j] + b[9 + j];
+    return r;
+}
+
+function parseMesh(body) {
+    const vs = [];
+    const vRe = /<vertex\b[^>]*?\bx\s*=\s*"([^"]*)"[^>]*?\by\s*=\s*"([^"]*)"[^>]*?\bz\s*=\s*"([^"]*)"/g;
+    let m;
+    while ((m = vRe.exec(body))) vs.push(+m[1], +m[2], +m[3]);
+    const ts = [];
+    const tRe = /<triangle\b[^>]*?\bv1\s*=\s*"(\d+)"[^>]*?\bv2\s*=\s*"(\d+)"[^>]*?\bv3\s*=\s*"(\d+)"/g;
+    while ((m = tRe.exec(body))) ts.push(+m[1], +m[2], +m[3]);
+    if (!vs.length || !ts.length) return null;
+    return { v: Float64Array.from(vs), t: Uint32Array.from(ts) };
+}
+
+function parseModel(text) {
+    const um = /<model\b[^>]*?\bunit\s*=\s*"([^"]*)"/.exec(text);
+    const unit = um ? (UNIT_MM[um[1].toLowerCase()] || 1) : 1;
+    const objects = new Map();
+    const objRe = /<object\b([^>]*?)(?:\/>|>([\s\S]*?)<\/object>)/g;
+    let m;
+    while ((m = objRe.exec(text))) {
+        const a = parseAttrs(m[1]);
+        const body = m[2] || '';
+        const obj = { type: (a.type || 'model').toLowerCase(), mesh: null, comps: [] };
+        if (body.indexOf('<mesh') >= 0) {
+            obj.mesh = parseMesh(body);
+        } else if (body.indexOf('<component') >= 0) {
+            const cRe = /<component\b([^>]*?)\/?>/g;
+            let c;
+            while ((c = cRe.exec(body))) {
+                const ca = parseAttrs(c[1]);
+                obj.comps.push({ id: ca.objectid, path: ca['p:path'] || null, T: parseT(ca.transform) });
+            }
+        }
+        objects.set(a.id, obj);
+    }
+    const items = [];
+    const bm = /<build\b[^>]*>([\s\S]*?)<\/build>/.exec(text);
+    if (bm) {
+        const iRe = /<item\b([^>]*?)\/?>/g;
+        let it;
+        while ((it = iRe.exec(bm[1]))) {
+            const ia = parseAttrs(it[1]);
+            items.push({ id: ia.objectid, T: parseT(ia.transform), path: ia['p:path'] || null, printable: ia.printable !== '0' });
+        }
+    }
+    return { unit, objects, items };
+}
+
+async function readSliceInfo(zip) {
+    const txt = await zip.text('Metadata/slice_info.config');
+    if (!txt) return null;
+    const plates = [];
+    const re = /<plate\b[^>]*>([\s\S]*?)<\/plate>/g;
+    let m;
+    while ((m = re.exec(txt))) {
+        const meta = {};
+        (m[1].match(/<metadata\b[^>]*>/g) || []).forEach(t => { const a = parseAttrs(t); if (a.key) meta[a.key] = a.value; });
+        let used = 0;
+        (m[1].match(/<filament\b[^>]*>/g) || []).forEach(t => { used += parseFloat(parseAttrs(t).used_g) || 0; });
+        const weight = parseFloat(meta.weight) || used;
+        const seconds = parseFloat(meta.prediction) || 0;
+        if (weight > 0 || seconds > 0) plates.push({ index: parseInt(meta.index, 10) || plates.length + 1, weight, seconds });
+    }
+    return plates.length ? plates : null;
+}
+
+async function readSlicerSettings(zip) {
+    const out = {};
+    try {
+        const j = await zip.text('Metadata/project_settings.config');
+        if (j) {
+            const o = JSON.parse(j);
+            const first = v => Array.isArray(v) ? v[0] : v;
+            if (o.sparse_infill_density !== undefined) out.infill = parseFloat(first(o.sparse_infill_density));
+            if (o.wall_loops !== undefined) out.walls = parseInt(first(o.wall_loops), 10);
+            if (o.layer_height !== undefined) out.layer = parseFloat(first(o.layer_height));
+            if (o.filament_type !== undefined) out.type = String(first(o.filament_type));
+        }
+    } catch (e) { /* необов'язково */ }
+    try {
+        const t = await zip.text('Metadata/Slic3r_PE.config');
+        if (t) {
+            const g = k => { const m = new RegExp('^\\s*;?\\s*' + k + '\\s*=\\s*(.+)$', 'm').exec(t); return m ? m[1].trim() : null; };
+            if (out.infill === undefined && g('fill_density')) out.infill = parseFloat(g('fill_density'));
+            if (out.walls === undefined && g('perimeters')) out.walls = parseInt(g('perimeters'), 10);
+            if (out.layer === undefined && g('layer_height')) out.layer = parseFloat(g('layer_height'));
+            if (out.type === undefined && g('filament_type')) out.type = g('filament_type');
+        }
+    } catch (e) { /* необов'язково */ }
+    return out;
+}
+
+async function analyze3mf(buffer) {
+    const zip = await openZip(buffer);
+    const key = n => normPath(n).toLowerCase();
+    const modelNames = zip.names.filter(n => /\.model$/i.test(n));
+    if (!modelNames.length) throw new Error('У файлі немає 3D-моделі. Перевірте, що це справжній .3mf');
+    const mainName = modelNames.find(n => key(n) === '3d/3dmodel.model') || modelNames[0];
+    const mainKey = key(mainName);
+    const models = new Map();
+    for (const n of modelNames) models.set(key(n), parseModel(await zip.text(n)));
+    const main = models.get(mainKey);
+
+    let items = main.items.filter(i => i.printable);
+    if (!items.length) {
+        const referenced = new Set();
+        for (const o of main.objects.values()) for (const c of o.comps) referenced.add(c.id);
+        items = [...main.objects.keys()].filter(id => !referenced.has(id)).map(id => ({ id, T: IDENT, path: null }));
+    }
+
+    const inst = [];
+    const walk = (mk, id, T, depth) => {
+        if (depth > 8) return;
+        const mdl = models.get(mk);
+        const o = mdl && mdl.objects.get(id);
+        if (!o || o.type !== 'model') return;
+        if (o.mesh) inst.push({ mesh: o.mesh, T });
+        for (const c of o.comps) walk(c.path ? key(c.path) : mk, c.id, mulT(c.T, T), depth + 1);
+    };
+    for (const it of items) walk(it.path ? key(it.path) : mainKey, it.id, it.T, 0);
+
+    let nTri = 0;
+    for (const i of inst) nTri += i.mesh.t.length / 3;
+    if (!nTri) throw new Error('У моделі не знайдено геометрії (трикутників)');
+
+    const unit = main.unit;
+    const pos = new Float32Array(nTri * 9);
+    const mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    let volume = 0, area = 0, o = 0;
+
+    for (const { mesh, T } of inst) {
+        const nv = mesh.v.length / 3;
+        const w = new Float64Array(nv * 3);
+        for (let i = 0; i < nv; i++) {
+            const x = mesh.v[i * 3], y = mesh.v[i * 3 + 1], z = mesh.v[i * 3 + 2];
+            const X = (x * T[0] + y * T[3] + z * T[6] + T[9]) * unit;
+            const Y = (x * T[1] + y * T[4] + z * T[7] + T[10]) * unit;
+            const Z = (x * T[2] + y * T[5] + z * T[8] + T[11]) * unit;
+            w[i * 3] = X; w[i * 3 + 1] = Y; w[i * 3 + 2] = Z;
+            if (X < mn[0]) mn[0] = X; if (X > mx[0]) mx[0] = X;
+            if (Y < mn[1]) mn[1] = Y; if (Y > mx[1]) mx[1] = Y;
+            if (Z < mn[2]) mn[2] = Z; if (Z > mx[2]) mx[2] = Z;
+        }
+        let vol = 0;
+        for (let k = 0; k < mesh.t.length; k += 3) {
+            const a = mesh.t[k] * 3, b = mesh.t[k + 1] * 3, c = mesh.t[k + 2] * 3;
+            if (a + 2 >= w.length || b + 2 >= w.length || c + 2 >= w.length) continue;
+            const ax = w[a], ay = w[a + 1], az = w[a + 2];
+            const bx = w[b], by = w[b + 1], bz = w[b + 2];
+            const cx = w[c], cy = w[c + 1], cz = w[c + 2];
+            vol += ax * (by * cz - bz * cy) + ay * (bz * cx - bx * cz) + az * (bx * cy - by * cx);
+            const ux = bx - ax, uy = by - ay, uz = bz - az;
+            const vx = cx - ax, vy = cy - ay, vz = cz - az;
+            const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+            area += 0.5 * Math.sqrt(nx * nx + ny * ny + nz * nz);
+            pos[o++] = ax; pos[o++] = ay; pos[o++] = az;
+            pos[o++] = bx; pos[o++] = by; pos[o++] = bz;
+            pos[o++] = cx; pos[o++] = cy; pos[o++] = cz;
+        }
+        volume += Math.abs(vol) / 6;
+    }
+    if (!o) throw new Error('У моделі не знайдено коректної геометрії');
+
+    const center = [(mn[0] + mx[0]) / 2, (mn[1] + mx[1]) / 2, (mn[2] + mx[2]) / 2];
+    for (let i = 0; i < o; i += 3) { pos[i] -= center[0]; pos[i + 1] -= center[1]; pos[i + 2] -= center[2]; }
+
+    return {
+        pos: pos.subarray(0, o),
+        triangles: o / 9,
+        volume,                                   // мм³
+        area,                                     // мм²
+        size: [mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]],
+        items: items.length,
+        plates: await readSliceInfo(zip),
+        settings: await readSlicerSettings(zip)
+    };
+}
+
+function estimate(an, s) {
+    const V = an.volume, A = an.area;
+    const shell = Math.min(V, A * s.walls * 0.45);
+    const solid = shell + (V - shell) * (s.infill / 100);
+    const grams = solid / 1000 * DENSITY[s.type];
+    const layers = an.size[2] / s.layer;
+    const seconds = solid / (FLOW[s.type] * s.speed) + layers * 2.5;
+    return { grams, seconds, solid };
+}
+// ==== CORE END
+
+// ==================== UI ====================
+const $ = id => document.getElementById(id);
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} };
+
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) {
+    try {
+        tg.ready(); tg.expand();
+        if (tg.initDataUnsafe && Object.keys(tg.initDataUnsafe).length > 0) document.body.classList.add('tg-mode');
+    } catch (e) {}
+}
+if (!document.body.classList.contains('tg-mode') && lsGet('theme') === 'dark') document.body.classList.add('dark-mode');
+
+const DEFAULT_PRICE = { PLA: 800, PETG: 750, ABS: 1200, TPU: 2500, Custom: 1000 };
+
+function fillSelect(id, values, fmt, selected) {
+    const sel = $(id);
+    sel.innerHTML = '';
+    values.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = fmt(v);
+        sel.appendChild(o);
+    });
+    sel.value = selected;
+}
+fillSelect('selInfill', [5, 10, 15, 20, 25, 30, 40, 50, 75, 100], v => v + '%', 15);
+fillSelect('selWalls', [1, 2, 3, 4, 5], v => v, 2);
+fillSelect('selLayer', [0.08, 0.12, 0.16, 0.2, 0.24, 0.28], v => v + ' мм', 0.2);
+(function () {
+    const sel = $('selSpeed');
+    [['0.6', 'Повільний (Ender-клас)'], ['1', 'Звичайний'], ['1.8', 'Швидкий (Bambu, Klipper)']].forEach(([v, t]) => {
+        const o = document.createElement('option'); o.value = v; o.textContent = t; sel.appendChild(o);
+    });
+    sel.value = '1';
+})();
+
+function setSel(id, val, fmt) {
+    if (!Number.isFinite(val)) return;
+    const sel = $(id);
+    let found = [...sel.options].some(o => Math.abs(parseFloat(o.value) - val) < 1e-9);
+    if (!found) {
+        const o = document.createElement('option');
+        o.value = val; o.textContent = fmt(val);
+        sel.appendChild(o);
+    }
+    sel.value = String(val);
+}
+
+function mapType(t) {
+    const u = String(t || '').toUpperCase();
+    if (/TPU|TPE/.test(u)) return 'TPU';
+    if (/PETG|PET/.test(u)) return 'PETG';
+    if (/ABS|ASA/.test(u)) return 'ABS';
+    if (/^PLA$/.test(u)) return 'PLA';
+    return u.startsWith('PLA') ? 'PLA' : 'Custom';
+}
+
+function fmtTime(sec) {
+    const m = Math.round(sec / 60);
+    if (m < 60) return m + ' хв';
+    return Math.floor(m / 60) + ' год ' + (m % 60) + ' хв';
+}
+
+// ---------- стан ----------
+let an = null;
+let lastResult = null;
+let viewer = null;
+let fileName = '';
+
+function setStatus(text, isErr) {
+    const el = $('status');
+    el.textContent = text || '';
+    el.className = 'status' + (isErr ? ' err' : '');
+}
+
+function readSettings() {
+    return {
+        type: $('selMat').value,
+        infill: parseFloat($('selInfill').value),
+        walls: parseInt($('selWalls').value, 10),
+        layer: parseFloat($('selLayer').value),
+        speed: parseFloat($('selSpeed').value)
+    };
+}
+
+function selectedPlate() {
+    if (!an || !an.plates) return null;
+    const v = $('selPlate').value;
+    if (v === 'all') {
+        return {
+            weight: an.plates.reduce((s, p) => s + p.weight, 0),
+            seconds: an.plates.reduce((s, p) => s + p.seconds, 0)
+        };
+    }
+    return an.plates.find(p => String(p.index) === v) || an.plates[0];
+}
+
+function refresh() {
+    if (!an) return;
+    const s = readSettings();
+    const sliced = !!an.plates;
+    document.querySelectorAll('.est-only').forEach(el => el.classList.toggle('disabled-row', sliced));
+
+    let grams, seconds;
+    if (sliced) {
+        const p = selectedPlate();
+        grams = p.weight; seconds = p.seconds;
+    } else {
+        const e = estimate(an, s);
+        grams = e.grams; seconds = e.seconds;
+    }
+    const hours = seconds / 3600;
+    const q = Math.max(1, parseFloat($('qty').value) || 1);
+
+    // та сама формула, що в калькуляторі
+    const num = (k, d) => { const v = parseFloat(lsGet(k)); return Number.isFinite(v) ? v : d; };
+    const priceKg = num('price_' + s.type, DEFAULT_PRICE[s.type]);
+    const cMat = grams / 1000 * priceKg;
+    const cEn = (num('power', 0) * hours / 1000) * num('priceKwt', 0);
+    const cAmort = (cMat + cEn) * 0.10;
+    const total = cMat + cEn + cAmort + num('packingPrice', 0);
+    const sell = total * (1 + num('markup', 0) / 100);
+
+    const f2 = v => v.toFixed(2) + ' ₴';
+    const perItem = v => q > 1 ? `<span class="price-per-item">(${f2(v / q)} / шт)</span>` : '';
+
+    $('rWeight').textContent = grams.toFixed(1) + ' г';
+    $('rTime').textContent = fmtTime(seconds);
+    $('rVol').textContent = (an.volume / 1000).toFixed(1) + ' см³';
+    $('rCost').innerHTML = f2(total) + perItem(total);
+    $('rSell').innerHTML = f2(sell) + perItem(sell);
+    $('rProfit').innerHTML = f2(sell - total) + perItem(sell - total);
+
+    const badge = $('badge');
+    badge.className = 'badge ' + (sliced ? 'exact' : 'est');
+    badge.textContent = sliced ? '✓ Точні дані зі слайсера' : '≈ Орієнтовно (±20–30%)';
+
+    lastResult = { W: grams, H: hours, q, type: s.type };
+}
+
+// ---------- завантаження файлу ----------
+async function handleFile(f) {
+    if (!f) return;
+    setStatus('Обробка файлу…');
+    try {
+        if (!/\.3mf$/i.test(f.name)) throw new Error('Потрібен файл формату .3mf');
+        if (typeof DecompressionStream === 'undefined') throw new Error('Цей браузер не вміє розпаковувати файли. Оновіть браузер або Telegram.');
+        const buf = await f.arrayBuffer();
+        await new Promise(r => setTimeout(r, 30));
+        an = await analyze3mf(buf);
+        fileName = f.name;
+
+        applySettings(an.settings);
+        $('qty').value = Math.max(1, an.items);
+
+        const ps = $('selPlate');
+        ps.innerHTML = '';
+        if (an.plates && an.plates.length > 1) {
+            an.plates.forEach(p => {
+                const o = document.createElement('option');
+                o.value = p.index;
+                o.textContent = `Плита ${p.index} · ${p.weight.toFixed(1)} г · ${fmtTime(p.seconds)}`;
+                ps.appendChild(o);
+            });
+            const all = document.createElement('option');
+            all.value = 'all'; all.textContent = 'Усі плити разом';
+            ps.appendChild(all);
+            $('plateRow').style.display = '';
+        } else {
+            $('plateRow').style.display = 'none';
+        }
+
+        $('viewerCard').style.display = '';
+        $('paramsCard').style.display = '';
+        $('results').style.display = '';
+        const sz = an.size.map(v => v.toFixed(1)).join(' × ');
+        $('fileInfo').textContent = `${fileName} · ${sz} мм · ${an.triangles.toLocaleString('uk-UA')} трикутників`;
+
+        showModel();
+        refresh();
+        setStatus('');
+    } catch (e) {
+        console.error(e);
+        setStatus(e.message || 'Не вдалося обробити файл', true);
+    }
+}
+
+function applySettings(st) {
+    if (!st) return;
+    if (st.type) $('selMat').value = mapType(st.type);
+    setSel('selInfill', st.infill, v => v + '%');
+    setSel('selWalls', st.walls, v => v);
+    setSel('selLayer', st.layer, v => v + ' мм');
+}
+
+function showModel() {
+    const cv = $('cv');
+    if (!viewer) viewer = createViewer(cv);
+    if (!viewer) {
+        cv.style.display = 'none';
+        $('viewerFallback').style.display = '';
+        return;
+    }
+    cv.style.display = '';
+    $('viewerFallback').style.display = 'none';
+    viewer.setMesh(an.pos, an.size);
+}
+
+// ---------- події ----------
+const drop = $('drop'), fileInput = $('file');
+drop.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => { handleFile(fileInput.files[0]); fileInput.value = ''; });
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+
+['selMat', 'selInfill', 'selWalls', 'selLayer', 'selSpeed', 'selPlate'].forEach(id => $(id).addEventListener('change', refresh));
+$('qty').addEventListener('input', refresh);
+
+$('btnTransfer').addEventListener('click', () => {
+    if (!lastResult) return;
+    lsSet('weight', lastResult.W.toFixed(1));
+    lsSet('hours', lastResult.H.toFixed(2));
+    lsSet('materialType', lastResult.type);
+    lsSet('quantity', String(lastResult.q));
+    location.href = 'index.html';
+});
+
+// ==================== 3D-перегляд (WebGL2, без бібліотек) ====================
+function createViewer(canvas) {
+    const gl = canvas.getContext('webgl2', { antialias: true });
+    if (!gl) return null;
+
+    const VS = `#version 300 es
+    in vec3 aPos; uniform mat4 uView; uniform mat4 uProj; out vec3 vPos;
+    void main() { vec4 p = uView * vec4(aPos, 1.0); vPos = p.xyz; gl_Position = uProj * p; }`;
+    const FS = `#version 300 es
+    precision highp float; in vec3 vPos; uniform vec3 uColor; uniform float uFlat; out vec4 o;
+    void main() {
+        if (uFlat > 0.5) { o = vec4(uColor, 1.0); return; }
+        vec3 n = normalize(cross(dFdx(vPos), dFdy(vPos)));
+        float l = 0.30 + 0.45 * abs(n.z) + 0.25 * abs(dot(n, normalize(vec3(-0.4, 0.6, 0.5))));
+        o = vec4(uColor * min(l, 1.0), 1.0);
+    }`;
+
+    let prog;
+    try {
+        const compile = (type, src) => {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, src); gl.compileShader(s);
+            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+            return s;
+        };
+        prog = gl.createProgram();
+        gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+        gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+    } catch (e) { console.error(e); return null; }
+
+    const loc = {
+        pos: gl.getAttribLocation(prog, 'aPos'),
+        view: gl.getUniformLocation(prog, 'uView'),
+        proj: gl.getUniformLocation(prog, 'uProj'),
+        color: gl.getUniformLocation(prog, 'uColor'),
+        flat: gl.getUniformLocation(prog, 'uFlat')
+    };
+
+    const persp = (fovy, asp, n, f) => {
+        const t = 1 / Math.tan(fovy / 2);
+        return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0];
+    };
+    const lookAt = (e, c, up) => {
+        let zx = e[0] - c[0], zy = e[1] - c[1], zz = e[2] - c[2];
+        let l = Math.hypot(zx, zy, zz); zx /= l; zy /= l; zz /= l;
+        let xx = up[1] * zz - up[2] * zy, xy = up[2] * zx - up[0] * zz, xz = up[0] * zy - up[1] * zx;
+        l = Math.hypot(xx, xy, xz); xx /= l; xy /= l; xz /= l;
+        const yx = zy * xz - zz * xy, yy = zz * xx - zx * xz, yz = zx * xy - zy * xx;
+        return [xx, yx, zx, 0, xy, yy, zy, 0, xz, yz, zz, 0,
+            -(xx * e[0] + xy * e[1] + xz * e[2]), -(yx * e[0] + yy * e[1] + yz * e[2]), -(zx * e[0] + zy * e[1] + zz * e[2]), 1];
+    };
+    const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+    function makeVao(data) {
+        const vao = gl.createVertexArray();
+        gl.bindVertexArray(vao);
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(loc.pos);
+        gl.vertexAttribPointer(loc.pos, 3, gl.FLOAT, false, 0, 0);
+        gl.bindVertexArray(null);
+        return { vao, buf };
+    }
+
+    let mesh = null, ground = null, meshCount = 0;
+    let radius = 1, az = 0.8, el = 0.45, dist = 3, auto = true, raf = 0;
+    let groundColor = [0.86, 0.87, 0.9];
+
+    function setMesh(pos, size) {
+        if (mesh) { gl.deleteBuffer(mesh.buf); gl.deleteVertexArray(mesh.vao); }
+        if (ground) { gl.deleteBuffer(ground.buf); gl.deleteVertexArray(ground.vao); }
+        mesh = makeVao(pos);
+        meshCount = pos.length / 3;
+        radius = Math.hypot(size[0], size[1], size[2]) / 2 || 1;
+        const half = Math.max(size[0], size[1]) * 0.7 || 1;
+        const gz = -size[2] / 2 - radius * 0.003;
+        ground = makeVao(new Float32Array([
+            -half, -half, gz, half, -half, gz, half, half, gz,
+            -half, -half, gz, half, half, gz, -half, half, gz
+        ]));
+        const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(getComputedStyle(canvas).backgroundColor || '');
+        const lum = m ? (+m[1] + +m[2] + +m[3]) / 3 : 255;
+        groundColor = lum > 128 ? [0.84, 0.85, 0.88] : [0.2, 0.2, 0.23];
+        dist = radius / Math.sin(0.35) * 1.35;
+        az = 0.8; el = 0.45;
+        auto = true;
+        cancelAnimationFrame(raf);
+        loop();
+    }
+
+    function draw() {
+        if (!meshCount) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = Math.max(1, Math.round(canvas.clientWidth * dpr));
+        const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+        if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+        gl.viewport(0, 0, w, h);
+        gl.clearColor(0, 0, 0, 0);
+        gl.enable(gl.DEPTH_TEST);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        gl.useProgram(prog);
+        const eye = [dist * Math.cos(el) * Math.cos(az), dist * Math.cos(el) * Math.sin(az), dist * Math.sin(el)];
+        gl.uniformMatrix4fv(loc.view, false, lookAt(eye, [0, 0, 0], [0, 0, 1]));
+        gl.uniformMatrix4fv(loc.proj, false, persp(0.7, w / h, radius * 0.05, dist + radius * 4));
+        gl.bindVertexArray(ground.vao);
+        gl.uniform1f(loc.flat, 1); gl.uniform3fv(loc.color, groundColor);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.bindVertexArray(mesh.vao);
+        gl.uniform1f(loc.flat, 0); gl.uniform3fv(loc.color, [0.0, 0.5, 0.95]);
+        gl.drawArrays(gl.TRIANGLES, 0, meshCount);
+        gl.bindVertexArray(null);
+    }
+
+    function loop() {
+        if (!auto) return;
+        az += 0.006;
+        draw();
+        raf = requestAnimationFrame(loop);
+    }
+
+    const pts = new Map();
+    let lastPinch = 0;
+    const pinchDist = () => { const p = [...pts.values()]; return Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]) || 1; };
+    canvas.addEventListener('pointerdown', e => {
+        try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+        pts.set(e.pointerId, [e.clientX, e.clientY]);
+        auto = false;
+        if (pts.size === 2) lastPinch = pinchDist();
+    });
+    canvas.addEventListener('pointermove', e => {
+        if (!pts.has(e.pointerId)) return;
+        const prev = pts.get(e.pointerId);
+        if (pts.size === 1) {
+            az -= (e.clientX - prev[0]) * 0.01;
+            el = clamp(el + (e.clientY - prev[1]) * 0.01, -1.45, 1.45);
+        }
+        pts.set(e.pointerId, [e.clientX, e.clientY]);
+        if (pts.size === 2) {
+            const d = pinchDist();
+            if (lastPinch) dist = clamp(dist * lastPinch / d, radius * 0.8, radius * 8);
+            lastPinch = d;
+        }
+        draw();
+    });
+    const up = e => { pts.delete(e.pointerId); lastPinch = 0; };
+    canvas.addEventListener('pointerup', up);
+    canvas.addEventListener('pointercancel', up);
+    canvas.addEventListener('wheel', e => {
+        e.preventDefault();
+        auto = false;
+        dist = clamp(dist * Math.exp(e.deltaY * 0.001), radius * 0.8, radius * 8);
+        draw();
+    }, { passive: false });
+    window.addEventListener('resize', draw);
+
+    return { setMesh, draw };
+}
+</script>
+</body>
+</html>
