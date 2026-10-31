@@ -128,6 +128,18 @@
 
         .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-main); opacity: 0.6; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--primary); color: #fff; opacity: 1; }
+
+        /* Випадаючий список "Упакування та додатки" */
+        .extras-toggle { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text-main); font-size: 1rem; font-weight: 500; cursor: pointer; box-sizing: border-box; }
+        .extras-toggle #extras-summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .extras-list { display: none; margin-top: 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); padding: 4px 12px; }
+        .extras-list.active { display: block; }
+        .extra-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+        .extra-row:last-child { border-bottom: none; }
+        .extra-row label.extra-check { display: flex; align-items: center; gap: 10px; flex: 1; margin: 0; font-size: 0.95rem; font-weight: 500; opacity: 1; cursor: pointer; }
+        .extra-row input[type="checkbox"] { width: 20px; height: 20px; padding: 0; margin: 0; appearance: auto; -webkit-appearance: checkbox; accent-color: var(--primary); flex-shrink: 0; }
+        .extra-row input.extra-price { width: 90px; padding: 8px 10px; text-align: right; }
+        .extra-cur { color: var(--text-muted); font-size: 0.95rem; }
     </style>
 </head>
 <body>
@@ -188,9 +200,35 @@
                     <label>Потужність (Вт)</label>
                     <input type="number" inputmode="decimal" id="power" oninput="calculate()">
                 </div>
-                <div class="input-group">
-                    <label>Упакування (₴)</label>
-                    <input type="number" inputmode="decimal" id="packingPrice" oninput="calculate()" placeholder="0">
+                <div class="input-group" style="flex: 1 1 100%;">
+                    <label>Упакування та додатки</label>
+                    <div class="extras-toggle" onclick="toggleExtras()">
+                        <span id="extras-summary">Не вибрано</span>
+                        <span id="extras-chevron" class="chevron"></span>
+                    </div>
+                    <div id="extrasList" class="extras-list">
+                        <div class="extra-row" data-key="pack">
+                            <label class="extra-check"><input type="checkbox" onchange="updateExtras()"><span class="extra-name">Упаковка</span></label>
+                            <input type="number" inputmode="decimal" class="extra-price" placeholder="0" oninput="updateExtras()">
+                            <span class="extra-cur">₴</span>
+                        </div>
+                        <div class="extra-row" data-key="magnet">
+                            <label class="extra-check"><input type="checkbox" onchange="updateExtras()"><span class="extra-name">Магніт</span></label>
+                            <input type="number" inputmode="decimal" class="extra-price" placeholder="0" oninput="updateExtras()">
+                            <span class="extra-cur">₴</span>
+                        </div>
+                        <div class="extra-row" data-key="keyring">
+                            <label class="extra-check"><input type="checkbox" onchange="updateExtras()"><span class="extra-name">Брелок-кільце</span></label>
+                            <input type="number" inputmode="decimal" class="extra-price" placeholder="0" oninput="updateExtras()">
+                            <span class="extra-cur">₴</span>
+                        </div>
+                        <div class="extra-row" data-key="switch">
+                            <label class="extra-check"><input type="checkbox" onchange="updateExtras()"><span class="extra-name">Свіч</span></label>
+                            <input type="number" inputmode="decimal" class="extra-price" placeholder="0" oninput="updateExtras()">
+                            <span class="extra-cur">₴</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="packingPrice" value="0">
                 </div>
                 <div class="input-group">
                     <label>Націнка (%)</label>
@@ -373,6 +411,60 @@
             document.getElementById('profit').innerText = fmtFull(sell - total);
         }
     }
+</script>
+
+<!-- Упакування та додатки: сума обраних пунктів записується в прихований #packingPrice,
+     який уже використовує calculate() -->
+<script>
+    function toggleExtras() {
+        document.getElementById('extrasList').classList.toggle('active');
+        document.getElementById('extras-chevron').classList.toggle('active-chevron');
+    }
+
+    function saveExtras() {
+        const data = {};
+        document.querySelectorAll('.extra-row').forEach(row => {
+            data[row.dataset.key] = {
+                on: row.querySelector('input[type="checkbox"]').checked,
+                price: row.querySelector('input.extra-price').value
+            };
+        });
+        localStorage.setItem('extras', JSON.stringify(data));
+    }
+
+    function loadExtras() {
+        let data = null;
+        try { data = JSON.parse(localStorage.getItem('extras')); } catch (e) {}
+        if (!data) {
+            // Перенесення старого значення "Упакування", якщо воно було збережене
+            const old = parseFloat(localStorage.getItem('packingPrice')) || 0;
+            data = old > 0 ? { pack: { on: true, price: old } } : {};
+        }
+        document.querySelectorAll('.extra-row').forEach(row => {
+            const item = data[row.dataset.key];
+            if (!item) return;
+            row.querySelector('input[type="checkbox"]').checked = !!item.on;
+            row.querySelector('input.extra-price').value = item.price;
+        });
+    }
+
+    function updateExtras() {
+        let sum = 0;
+        const names = [];
+        document.querySelectorAll('.extra-row').forEach(row => {
+            if (row.querySelector('input[type="checkbox"]').checked) {
+                sum += parseFloat(row.querySelector('input.extra-price').value) || 0;
+                names.push(row.querySelector('.extra-name').innerText);
+            }
+        });
+        document.getElementById('packingPrice').value = sum;
+        document.getElementById('extras-summary').innerText =
+            names.length ? names.join(', ') + ' — ' + sum.toFixed(2) + ' ₴' : 'Не вибрано';
+        saveExtras();
+        calculate();
+    }
+
+    window.addEventListener('load', () => { loadExtras(); updateExtras(); });
 </script>
 </body>
 </html>
